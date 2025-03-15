@@ -34,6 +34,7 @@ namespace osu.Game.Screens.Select
         public OptionalRange<float> OverallDifficulty;
         public OptionalRange<double> Length;
         public OptionalRange<double> BPM;
+        public OptionalRange<int> Objects;
         public OptionalRange<int> BeatDivisor;
         public OptionalSet<BeatmapOnlineStatus> OnlineStatus = new OptionalSet<BeatmapOnlineStatus>();
         public OptionalRange<DateTimeOffset> LastPlayed;

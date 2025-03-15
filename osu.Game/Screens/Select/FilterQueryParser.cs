@@ -56,6 +56,9 @@ namespace osu.Game.Screens.Select
                 case "od":
                     return TryUpdateCriteriaRange(ref criteria.OverallDifficulty, op, value);
 
+                case "objects":
+                    return TryUpdateCriteriaRange(ref criteria.Objects, op, value, tryParseInt);
+
                 case "bpm":
                     return TryUpdateCriteriaRange(ref criteria.BPM, op, value, 0.01d / 2);
 

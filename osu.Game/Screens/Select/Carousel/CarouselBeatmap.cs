@@ -63,6 +63,7 @@ namespace osu.Game.Screens.Select.Carousel
             match &= !criteria.ApproachRate.HasFilter || criteria.ApproachRate.IsInRange(BeatmapInfo.Difficulty.ApproachRate);
             match &= !criteria.DrainRate.HasFilter || criteria.DrainRate.IsInRange(BeatmapInfo.Difficulty.DrainRate);
             match &= !criteria.CircleSize.HasFilter || criteria.CircleSize.IsInRange(BeatmapInfo.Difficulty.CircleSize);
+            match &= !criteria.Objects.HasFilter || criteria.Objects.IsInRange(BeatmapInfo.TotalObjectCount);
             match &= !criteria.OverallDifficulty.HasFilter || criteria.OverallDifficulty.IsInRange(BeatmapInfo.Difficulty.OverallDifficulty);
             match &= !criteria.Length.HasFilter || criteria.Length.IsInRange(BeatmapInfo.Length);
             match &= !criteria.LastPlayed.HasFilter || criteria.LastPlayed.IsInRange(BeatmapInfo.LastPlayed ?? DateTimeOffset.MinValue);
