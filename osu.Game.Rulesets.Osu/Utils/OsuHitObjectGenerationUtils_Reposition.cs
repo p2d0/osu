@@ -65,7 +65,7 @@ namespace osu.Game.Rulesets.Osu.Utils
         /// </summary>
         /// <param name="objectPositionInfos">Position information for each hit object.</param>
         /// <returns>The repositioned hit objects.</returns>
-        public static List<OsuHitObject> RepositionHitObjects(IEnumerable<ObjectPositionInfo> objectPositionInfos)
+        public static List<OsuHitObject> RepositionHitObjects(IEnumerable<ObjectPositionInfo> objectPositionInfos,bool isHardcore = false)
         {
             List<WorkingObject> workingObjects = objectPositionInfos.Select(o => new WorkingObject(o)).ToList();
             WorkingObject? previous = null;
@@ -89,7 +89,7 @@ namespace osu.Game.Rulesets.Osu.Utils
                 switch (hitObject)
                 {
                     case HitCircle:
-                        shift = clampHitCircleToPlayfield(current);
+                        shift = clampHitCircleToPlayfield(current,isHardcore);
                         break;
 
                     case Slider:
@@ -97,7 +97,7 @@ namespace osu.Game.Rulesets.Osu.Utils
                         break;
                 }
 
-                if (shift != Vector2.Zero)
+                if (!isHardcore && shift != Vector2.Zero)
                 {
                     var toBeShifted = new List<OsuHitObject>();
 
@@ -174,12 +174,12 @@ namespace osu.Game.Rulesets.Osu.Utils
         /// Move the modified position of a <see cref="HitCircle"/> so that it fits inside the playfield.
         /// </summary>
         /// <returns>The deviation from the original modified position in order to fit within the playfield.</returns>
-        private static Vector2 clampHitCircleToPlayfield(WorkingObject workingObject)
+        private static Vector2 clampHitCircleToPlayfield(WorkingObject workingObject, bool isHardcore = false)
         {
             var previousPosition = workingObject.PositionModified;
             workingObject.EndPositionModified = workingObject.PositionModified = clampToPlayfieldWithPadding(
                 workingObject.PositionModified,
-                (float)workingObject.HitObject.Radius
+                isHardcore ? 0f : (float)workingObject.HitObject.Radius
             );
 
             workingObject.HitObject.Position = workingObject.PositionModified;

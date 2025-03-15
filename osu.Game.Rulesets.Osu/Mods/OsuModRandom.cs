@@ -7,6 +7,7 @@ using System.Linq;
 using osu.Framework.Bindables;
 using osu.Framework.Localisation;
 using osu.Framework.Utils;
+using osu.Framework.Logging;
 using osu.Game.Beatmaps;
 using osu.Game.Configuration;
 using osu.Game.Rulesets.Mods;
@@ -34,6 +35,9 @@ namespace osu.Game.Rulesets.Osu.Mods
             MaxValue = 10,
             Precision = 0.1f
         };
+
+        [SettingSource("Hard random", "Remove circle padding and unnecessary shifting")]
+        public Bindable<bool> Hardcore { get; } = new BindableBool(false);
 
         private static readonly float playfield_diagonal = OsuPlayfield.BASE_SIZE.LengthFast;
 
@@ -72,6 +76,7 @@ namespace osu.Game.Rulesets.Osu.Mods
                 if (i == 0)
                 {
                     positionInfos[i].DistanceFromPrevious = (float)(random.NextDouble() * OsuPlayfield.BASE_SIZE.Y / 2);
+                    Logger.Log($"DistanceFromPrevious i=0 {positionInfos[i].DistanceFromPrevious}");
                     positionInfos[i].RelativeAngle = (float)(random.NextDouble() * 2 * Math.PI - Math.PI);
                 }
                 else
@@ -94,11 +99,31 @@ namespace osu.Game.Rulesets.Osu.Mods
                         // flowChangeOffset should mainly affect streams.
                         flowChangeOffset * (playfield_diagonal - positionInfos[i].DistanceFromPrevious);
 
+                    // Logger.Log($"totalOffset i={i} {totalOffset}");
                     positionInfos[i].RelativeAngle = getRelativeTargetAngle(positionInfos[i].DistanceFromPrevious, totalOffset, flowDirection);
+                    // Logger.Log($"Distance from previous i={i} {positionInfos[i].DistanceFromPrevious}");
+                    // Logger.Log($"RelativeAngle i={i} {positionInfos[i].RelativeAngle}");
                 }
             }
 
-            osuBeatmap.HitObjects = OsuHitObjectGenerationUtils.RepositionHitObjects(positionInfos);
+            osuBeatmap.HitObjects = OsuHitObjectGenerationUtils.RepositionHitObjects(positionInfos,Hardcore.Value);
+            // var updatedPositionInfos = OsuHitObjectGenerationUtils.GeneratePositionInfos(osuBeatmap.HitObjects);
+            // var count = 0;
+            // var totalDistanceDifferece =  0f;
+            // for (int i = 0; i < positionInfos.Count; i++)
+            // {
+            //     if(positionInfos[i].DistanceFromPrevious - updatedPositionInfos[i].DistanceFromPrevious > 50)
+            //     {
+            //         count++;
+            //         Logger.Log($"Position is more than 50 off i={i} {positionInfos[i].DistanceFromPrevious} {updatedPositionInfos[i].DistanceFromPrevious}");
+            //         Logger.Log($"Updated RelativeAngle i={i} {positionInfos[i].RelativeAngle}");
+            //     }
+            //     totalDistanceDifferece += positionInfos[i].DistanceFromPrevious - updatedPositionInfos[i].DistanceFromPrevious;
+            //     // Logger.Log($"Updated DistanceFromPrevious i={i} {positionInfos[i].DistanceFromPrevious}");
+            //     // Logger.Log($"Updated RelativeAngle i={i} {positionInfos[i].RelativeAngle}");
+            // }
+            // Logger.Log($"Count (Lower is better) {count}");
+            // Logger.Log($"TotalDistanceDifferece (Lower is better) {totalDistanceDifferece}");
         }
 
         private float getRandomOffset(float stdDev)
@@ -126,7 +151,7 @@ namespace osu.Game.Rulesets.Osu.Mods
             float customOffsetY = angleWideness * 0.25f - 0.075f;
 
             targetDistance += customOffsetX;
-            float angle = (float)(2.16 / (1 + 200 * Math.Exp(0.036 * (targetDistance - 310 + customOffsetX))) + 0.5);
+            float angle = (float)(2.16 / (1+ 200 * Math.Exp(0.036 * (targetDistance - 310 + customOffsetX))) + 0.5);
             angle += offset + customOffsetY;
 
             float relativeAngle = (float)Math.PI - angle;
@@ -137,6 +162,7 @@ namespace osu.Game.Rulesets.Osu.Mods
         /// <returns>Whether a new section should be started at the current <see cref="OsuHitObject"/>.</returns>
         private bool shouldStartNewSection(OsuBeatmap beatmap, IReadOnlyList<OsuHitObjectGenerationUtils.ObjectPositionInfo> positionInfos, int i)
         {
+            return false;
             if (i == 0)
                 return true;
 
