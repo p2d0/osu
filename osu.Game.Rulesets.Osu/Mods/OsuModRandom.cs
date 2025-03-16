@@ -55,7 +55,7 @@ namespace osu.Game.Rulesets.Osu.Mods
         [SettingSource("Stream Distance Multiplier", "How much bigger the distance")]
         public BindableFloat StreamDistanceMultiplier { get; } = new BindableFloat(1)
         {
-            MinValue = 1f,
+            MinValue = 0.1f,
             MaxValue = 50,
             Precision = 0.1f
         };
@@ -83,15 +83,16 @@ namespace osu.Game.Rulesets.Osu.Mods
 
             // Whether the angles are positive or negative (clockwise or counter-clockwise flow).
             bool flowDirection = false;
-
+            var originalDistance = 0f;
             for (int i = 0; i < positionInfos.Count; i++)
             {
+                originalDistance = positionInfos[i].DistanceFromPrevious;
                 positionInfos[i].DistanceFromPrevious = positionInfos[i].DistanceFromPrevious < 50 ?
                     positionInfos[i].DistanceFromPrevious * StreamDistanceMultiplier.Value :
                     positionInfos[i].DistanceFromPrevious * AimDistanceMultiplier.Value;
                 if (shouldStartNewSection(osuBeatmap, positionInfos, i))
                 {
-                    sectionOffset = positionInfos[i].DistanceFromPrevious < 50 ? getRandomOffsetStream(0.008f) : getRandomOffset(0.0008f);
+                    sectionOffset = originalDistance < 50 ? getRandomOffsetStream(0.008f) : getRandomOffset(0.0008f);
                     flowDirection = !flowDirection;
                 }
 
@@ -112,11 +113,11 @@ namespace osu.Game.Rulesets.Osu.Mods
                     float flowChangeOffset = 0;
 
                     // Offsets only the angle of the current hit object.
-                    float oneTimeOffset = positionInfos[i].DistanceFromPrevious < 50 ? getRandomOffsetStream(0.002f) : getRandomOffset(0.002f);
+                    float oneTimeOffset = originalDistance < 50 ? getRandomOffsetStream(0.002f) : getRandomOffset(0.002f);
 
                     if (shouldApplyFlowChange(positionInfos, i))
                     {
-                        flowChangeOffset = positionInfos[i].DistanceFromPrevious < 50 ? getRandomOffsetStream(0.002f) : getRandomOffset(0.002f);
+                        flowChangeOffset = originalDistance < 50 ? getRandomOffsetStream(0.002f) : getRandomOffset(0.002f);
                         flowDirection = !flowDirection;
                     }
 
@@ -127,7 +128,7 @@ namespace osu.Game.Rulesets.Osu.Mods
                         flowChangeOffset * (playfield_diagonal - positionInfos[i].DistanceFromPrevious);
 
                     // Logger.Log($"totalOffset i={i} {totalOffset}");
-                    positionInfos[i].RelativeAngle = positionInfos[i].DistanceFromPrevious < 50 ?
+                    positionInfos[i].RelativeAngle = originalDistance < 50 ?
                         getRelativeTargetAngleStream(positionInfos[i].DistanceFromPrevious, totalOffset, flowDirection) :
                         getRelativeTargetAngle(positionInfos[i].DistanceFromPrevious, totalOffset, flowDirection);
                     // Logger.Log($"Distance from previous i={i} {positionInfos[i].DistanceFromPrevious}");
