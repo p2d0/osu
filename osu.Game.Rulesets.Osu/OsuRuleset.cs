@@ -183,6 +183,7 @@ namespace osu.Game.Rulesets.Osu
                         new OsuModDifficultyAdjust(),
                         new OsuModClassic(),
                         new OsuModRandom(),
+                        new OsuModSpacingAdjust(),
                         new OsuModMirror(),
                         new MultiMod(new OsuModAlternate(), new OsuModSingleTap())
                     };

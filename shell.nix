@@ -32,6 +32,8 @@ mkShell {
   buildInputs = [
     pkgs.dotnetCorePackages.sdk_8_0_3xx
     pkgs.netcoredbg
+    pkgs.omnisharp-roslyn
+    pkgs.roslyn-ls
 
   ];
 }
