@@ -71,6 +71,7 @@ public void ApplyToBeatmap(IBeatmap beatmap)
         }
     }
 
+    // TODO fix
     osuBeatmap.HitObjects = OsuHitObjectGenerationUtils.RepositionHitObjects(positionInfos, true);
 }
     }

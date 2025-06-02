@@ -16,13 +16,18 @@ using osu.Game.Rulesets.Osu.Beatmaps;
 using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Rulesets.Osu.UI;
 using osu.Game.Rulesets.Osu.Utils;
+using osu.Game.Rulesets.UI;
+using osu.Framework.Graphics;
+using osuTK;
+using osu.Framework.Extensions.ObjectExtensions;
+using osu.Framework.Input.StateChanges;
 
 namespace osu.Game.Rulesets.Osu.Mods
 {
     /// <summary>
     /// Mod that randomises the positions of the <see cref="HitObject"/>s
     /// </summary>
-    public class OsuModRandom : ModRandom, IApplicableToBeatmap
+    public class OsuModRandom : ModRandom, IApplicableToBeatmap, IUpdatableByPlayfield, IApplicableToDrawableRuleset<OsuHitObject>
     {
         public override LocalisableString Description => "It never gets boring!";
 
@@ -70,6 +75,24 @@ namespace osu.Game.Rulesets.Osu.Mods
         [SettingSource("Hard random", "Remove circle padding and unnecessary shifting")]
         public Bindable<bool> Hardcore { get; } = new BindableBool(false);
 
+        [SettingSource("Squarish angle", "Squareish angle")]
+        public Bindable<bool> Squareish { get; } = new BindableBool(false);
+
+
+        [SettingSource("Extend playarea", "Extend playarea")]
+        public Bindable<bool> ExtendPlayArea { get; } = new BindableBool(false);
+
+        [SettingSource("Infinite playarea", "Infinite playarea")]
+        public Bindable<bool> InfinitePlayArea { get; } = new BindableBool(false);
+
+
+        // [SettingSource("Square Distance", "Square distance")]
+        // public BindableInt SquareDistance { get; } = new BindableInt(200)
+        // {
+        //     MinValue = 100,
+        //     MaxValue = 1000,
+        // };
+
         private static readonly float playfield_diagonal = OsuPlayfield.BASE_SIZE.LengthFast;
 
         private Random random = null!;
@@ -97,7 +120,10 @@ namespace osu.Game.Rulesets.Osu.Mods
                 if(positionInfos[i].DistanceFromPrevious < StreamDistance.Value){
                     positionInfos[i].DistanceFromPrevious *= StreamDistanceMultiplier.Value;
                 } else {
-                    positionInfos[i].DistanceFromPrevious *= AimDistanceMultiplier.Value;
+                    // if(Squareish.Value)
+                    //     positionInfos[i].DistanceFromPrevious = SquareDistance.Value;
+                    // else
+                        positionInfos[i].DistanceFromPrevious *= AimDistanceMultiplier.Value;
 
                     // if(AimDistanceMultiplier.Value >= 1)
                     //     positionInfos[i].DistanceFromPrevious *= MathF.Pow(AimDistanceMultiplier.Value, 1f - positionInfos[i].DistanceFromPrevious / 640f);
@@ -151,7 +177,7 @@ namespace osu.Game.Rulesets.Osu.Mods
                 }
             }
 
-            osuBeatmap.HitObjects = OsuHitObjectGenerationUtils.RepositionHitObjects(positionInfos,Hardcore.Value);
+            osuBeatmap.HitObjects = OsuHitObjectGenerationUtils.RepositionHitObjects(positionInfos,Hardcore.Value,ExtendPlayArea.Value,InfinitePlayArea.Value);
             // var updatedPositionInfos = OsuHitObjectGenerationUtils.GeneratePositionInfos(osuBeatmap.HitObjects);
             // var count = 0;
             // var totalDistanceDifferece =  0f;
@@ -169,6 +195,50 @@ namespace osu.Game.Rulesets.Osu.Mods
             // }
             // Logger.Log($"Count (Lower is better) {count}");
             // Logger.Log($"TotalDistanceDifferece (Lower is better) {totalDistanceDifferece}");
+        }
+        // private int Moved = 0;
+
+        private OsuInputManager inputManager = null!;
+
+        public void ApplyToDrawableRuleset(DrawableRuleset<OsuHitObject> drawableRuleset)
+        {
+            // Grab the input manager to disable the user's cursor, and for future use
+            inputManager = ((DrawableOsuRuleset)drawableRuleset).KeyBindingInputManager;
+        }
+
+        public void Update(Playfield playfield)
+        {
+            // Get current cursor position
+            var cursorPos = playfield.Cursor.AsNonNull().ActiveCursor.DrawPosition;
+            if(cursorPos.X < 0 || cursorPos.Y < 0)
+            {
+                var offsetX = cursorPos.X < 0 ? -cursorPos.X : 0;
+                var offsetY = cursorPos.Y < 0 ? -cursorPos.Y : 0;
+                // inputManager.MoveMouseTo(new Vector2(1000,500));
+                // playfield.Cursor.ActiveCursor.MoveTo(new Vector2(200,200), 0, Easing.None);
+                new MousePositionAbsoluteInput { Position = new Vector2(1000,500) }.Apply(inputManager.CurrentState, inputManager);
+                // playfield.Cursor.ActiveCursor.
+                // playfield.MoveToOffset(new Vector2(offsetX, offsetY), 0, Easing.None);
+                // Moved += 1;
+            }
+
+            Logger.Log($"Cursor position: {cursorPos}");
+            Logger.Log($"Playfield: {playfield.DrawWidth}x{playfield.DrawHeight}");
+
+            // Calculate screen center
+            // var screenCenter = new Vector2(playfield.DrawWidth / 2, playfield.DrawHeight / 2);
+
+            // // Calculate cursor's offset from center
+            // var cursorOffset = cursorPos - screenCenter;
+
+            // // Calculate desired playfield offset (scaled by extension factor)
+            // var extension = ExtendPlayArea.Value ? PlayAreaExtension.Value : 0;
+            // var targetOffset = new Vector2(
+            //     extension * (cursorOffset.X / screenCenter.X),
+            //     extension * (cursorOffset.Y / screenCenter.Y)
+            // );
+
+            // // Apply the offset to the playfield
         }
 
         private float getRandomOffset(float stdDev)
@@ -209,6 +279,10 @@ namespace osu.Game.Rulesets.Osu.Mods
             angle += offset + customOffsetY;
 
             float relativeAngle = (float)Math.PI - angle;
+            Logger.Log($"relativeAngle {relativeAngle} angle {angle}");
+
+            if(Squareish.Value)
+                relativeAngle = 1.57079f;
 
             return flowDirection ? -relativeAngle : relativeAngle;
         }
@@ -233,6 +307,9 @@ namespace osu.Game.Rulesets.Osu.Mods
             angle += offset + customOffsetY;
 
             float relativeAngle = (float)Math.PI - angle;
+
+            if(Squareish.Value)
+                relativeAngle = 1.57079f;
 
             return flowDirection ? -relativeAngle : relativeAngle;
         }
