@@ -15,9 +15,14 @@ namespace osu.Game.Online.Solo
         private readonly BeatmapInfo beatmapInfo;
         private readonly int rulesetId;
         private readonly string versionHash;
+        private readonly int Id;
 
         public CreateSoloScoreRequest(BeatmapInfo beatmapInfo, int rulesetId, string versionHash)
         {
+            if (beatmapInfo.OnlineID <= 0)
+                this.Id = 0;
+            else
+                this.Id = beatmapInfo.OnlineID;
             this.beatmapInfo = beatmapInfo;
             this.rulesetId = rulesetId;
             this.versionHash = versionHash;
@@ -33,6 +38,6 @@ namespace osu.Game.Online.Solo
             return req;
         }
 
-        protected override string Target => $@"beatmaps/{beatmapInfo.OnlineID}/solo/scores";
+        protected override string Target => $@"beatmaps/{Id}/solo/scores";
     }
 }

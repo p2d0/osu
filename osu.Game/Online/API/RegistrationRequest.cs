@@ -21,6 +21,10 @@ namespace osu.Game.Online.API
             base.PrePerform();
         }
 
+        public RegistrationRequest()
+        {
+            AllowInsecureRequests = true;
+        }
         public class RegistrationRequestErrors
         {
             /// <summary>

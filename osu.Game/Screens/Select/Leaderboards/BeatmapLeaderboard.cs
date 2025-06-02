@@ -132,11 +132,11 @@ namespace osu.Game.Screens.Select.Leaderboards
                 return null;
             }
 
-            if (fetchBeatmapInfo.OnlineID <= 0 || fetchBeatmapInfo.Status <= BeatmapOnlineStatus.Pending)
-            {
-                SetErrorState(LeaderboardState.BeatmapUnavailable);
-                return null;
-            }
+            // if (fetchBeatmapInfo.OnlineID <= 0 || fetchBeatmapInfo.Status <= BeatmapOnlineStatus.Pending)
+            // {
+            //     SetErrorState(LeaderboardState.BeatmapUnavailable);
+            //     return null;
+            // }
 
             if (Scope.RequiresSupporter(filterMods) && !api.LocalUser.Value.IsSupporter)
             {

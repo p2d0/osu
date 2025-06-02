@@ -13,7 +13,7 @@ namespace osu.Game.Online.Solo
         public SubmitSoloScoreRequest(ScoreInfo scoreInfo, long scoreId, int beatmapId)
             : base(scoreInfo, scoreId)
         {
-            this.beatmapId = beatmapId;
+            this.beatmapId = beatmapId  >= 0 ? beatmapId : 0;
         }
 
         protected override string Target => $@"beatmaps/{beatmapId}/solo/scores/{ScoreId}";

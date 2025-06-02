@@ -46,6 +46,9 @@ namespace osu.Game.Online.API.Requests.Responses
         [JsonProperty("max_combo")]
         public int MaxCombo { get; set; }
 
+        [JsonProperty("checksum")]
+        public string Checksum { get; set; }
+
         [JsonConverter(typeof(StringEnumConverter))]
         // ScoreRank is aligned to make 0 equal D. We still want to serialise this (even when DefaultValueHandling.Ignore is used).
         [JsonProperty("rank", DefaultValueHandling = DefaultValueHandling.Include)]
@@ -250,6 +253,7 @@ namespace osu.Game.Online.API.Requests.Responses
             RulesetID = score.RulesetID,
             Passed = score.Passed,
             Mods = score.APIMods,
+            Checksum = score.BeatmapInfo.MD5Hash,
             Statistics = score.Statistics.Where(kvp => kvp.Value != 0).ToDictionary(),
             MaximumStatistics = score.MaximumStatistics.Where(kvp => kvp.Value != 0).ToDictionary(),
         };
