@@ -208,22 +208,36 @@ namespace osu.Game.Rulesets.Osu.Mods
 
         public void Update(Playfield playfield)
         {
+            var padding = 200;
             // Get current cursor position
             var cursorPos = playfield.Cursor.AsNonNull().ActiveCursor.DrawPosition;
+            if(cursorPos.X > (playfield.DrawPosition.X + playfield.DrawWidth) || cursorPos.Y > (playfield.DrawPosition.Y + playfield.DrawHeight ))
+            {
+                Logger.Log($"Cursor position is out of bounds: {cursorPos}");
+                var offsetX = cursorPos.X > playfield.DrawWidth ? -cursorPos.X + padding : 0;
+                var offsetY = cursorPos.Y < playfield.DrawHeight ? -cursorPos.Y + padding : 0;
+                // inputManager.MoveMouseTo(new Vector2(1000,500));
+                playfield.Cursor.ActiveCursor.MoveTo(new Vector2(200,200), 0, Easing.None);
+                // new MousePositionAbsoluteInput { Position = playfield.ToScreenSpace(new Vector2(200,200)) }.Apply(inputManager.CurrentState, inputManager);
+                playfield.MoveTo(new Vector2(offsetX, offsetY), 0, Easing.None);
+                return;
+            }
+
             if(cursorPos.X < 0 || cursorPos.Y < 0)
             {
-                var offsetX = cursorPos.X < 0 ? -cursorPos.X : 0;
-                var offsetY = cursorPos.Y < 0 ? -cursorPos.Y : 0;
+                Logger.Log($"Cursor position is out of bounds: {cursorPos}");
+                var offsetX = cursorPos.X < 0 ? -cursorPos.X - padding : 0;
+                var offsetY = cursorPos.Y < 0 ? -cursorPos.Y - padding : 0;
                 // inputManager.MoveMouseTo(new Vector2(1000,500));
                 // playfield.Cursor.ActiveCursor.MoveTo(new Vector2(200,200), 0, Easing.None);
-                new MousePositionAbsoluteInput { Position = new Vector2(1000,500) }.Apply(inputManager.CurrentState, inputManager);
+                // new MousePositionAbsoluteInput { Position = playfield.ToScreenSpace(new Vector2(200,200)) }.Apply(inputManager.CurrentState, inputManager);
+                playfield.MoveTo(new Vector2(offsetX, offsetY), 0, Easing.None);
                 // playfield.Cursor.ActiveCursor.
-                // playfield.MoveToOffset(new Vector2(offsetX, offsetY), 0, Easing.None);
                 // Moved += 1;
             }
 
-            Logger.Log($"Cursor position: {cursorPos}");
-            Logger.Log($"Playfield: {playfield.DrawWidth}x{playfield.DrawHeight}");
+            // Logger.Log($"Cursor position: {cursorPos}");
+            // Logger.Log($"Playfield: {playfield.DrawWidth}x{playfield.DrawHeight}");
 
             // Calculate screen center
             // var screenCenter = new Vector2(playfield.DrawWidth / 2, playfield.DrawHeight / 2);

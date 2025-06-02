@@ -5,10 +5,11 @@
             "name": "osu! (Debug)",
             "type": "coreclr",
             "request": "launch",
-            "program": "dotnet",
-            "args": [
-                "${workspaceRoot}/osu.Desktop/bin/Debug/net8.0/osu!.dll"
-            ],
+            "program": "${workspaceRoot}/osu.Desktop/bin/Debug/net8.0/osu!.dll",
+            "mode": "launch",
+            // "args": [
+            //     "${workspaceRoot}/osu.Desktop/bin/Debug/net8.0/osu!.dll"
+            // ],
             "cwd": "${workspaceRoot}",
             "preLaunchTask": "Build osu! (Debug)",
             "console": "internalConsole"
@@ -29,14 +30,31 @@
             "name": "osu! (Tests, Debug)",
             "type": "coreclr",
             "request": "launch",
-            "program": "dotnet",
-            "args": [
-                "${workspaceRoot}/osu.Game.Tests/bin/Debug/net8.0/osu.Game.Tests.dll"
-            ],
+            "mode": "launch",
+            "program": "${workspaceRoot}/osu.Game.Tests/bin/Debug/net8.0/osu.Game.Tests.dll",
+            // "program": "dotnet",
+            // "args": [
+            //     "${workspaceRoot}/osu.Game.Tests/bin/Debug/net8.0/osu.Game.Tests.dll"
+            // ],
             "cwd": "${workspaceRoot}",
             "preLaunchTask": "Build tests (Debug)",
             "console": "internalConsole"
         },
+        {
+            "name": "osu! rulesests (Tests, Debug)",
+            "type": "coreclr",
+            "request": "launch",
+            "mode": "launch",
+            "program": "${workspaceRoot}/osu.Game.Rulesets.Osu.Tests/bin/Debug/net8.0/osu.Game.Rulesets.Osu.Tests.dll",
+            // "program": "dotnet",
+            // "args": [
+            //     "${workspaceRoot}/osu.Game.Tests/bin/Debug/net8.0/osu.Game.Tests.dll"
+            // ],
+            "cwd": "${workspaceRoot}",
+            "preLaunchTask": "Build tests (Debug)",
+            "console": "internalConsole"
+        },
+
         {
             "name": "osu! (Tests, Release)",
             "type": "coreclr",

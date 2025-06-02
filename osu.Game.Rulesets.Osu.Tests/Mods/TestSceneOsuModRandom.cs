@@ -14,6 +14,36 @@ namespace osu.Game.Rulesets.Osu.Tests.Mods
 {
     public partial class TestSceneOsuModRandom : OsuModTestScene
     {
+        [Test]
+        public void TestInfiniteAreaAuto() => CreateModTest(new ModTestData
+        {
+            Mod = new OsuModRandom
+            {
+                AngleSharpness = { Value = 7 },
+                InfinitePlayArea = { Value = true },
+                Hardcore = { Value = true },
+                StreamDistance =  { Value = 25 },
+                AimDistanceMultiplier = { Value = 5.0f }
+            },
+            Autoplay = true,
+            PassCondition = () => true
+        });
+
+        [Test]
+        public void TestInfiniteAreaManual() => CreateModTest(new ModTestData
+        {
+            Mod = new OsuModRandom
+            {
+                AngleSharpness = { Value = 7 },
+                InfinitePlayArea = { Value = true },
+                Hardcore = { Value = true },
+                StreamDistance =  { Value = 25 },
+                AimDistanceMultiplier = { Value = 5.0f }
+            },
+            Autoplay = false,
+            PassCondition = () => true
+        });
+
         [TestCase(1)]
         [TestCase(7)]
         [TestCase(10)]
@@ -21,7 +51,8 @@ namespace osu.Game.Rulesets.Osu.Tests.Mods
         {
             Mod = new OsuModRandom
             {
-                AngleSharpness = { Value = angleSharpness }
+                AngleSharpness = { Value = angleSharpness },
+                InfinitePlayArea = { Value = true }
             },
             Autoplay = true,
             PassCondition = () => true
