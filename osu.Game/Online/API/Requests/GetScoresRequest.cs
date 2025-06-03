@@ -13,6 +13,7 @@ using System.Linq;
 using osu.Framework.Logging;
 using osu.Framework.IO.Network;
 using osu.Game.Extensions;
+using System.Text;
 
 namespace osu.Game.Online.API.Requests
 {
@@ -46,9 +47,9 @@ namespace osu.Game.Online.API.Requests
 
         protected override string Target => $@"beatmaps/{Id}/solo-scores{createQueryParameters()}";
 
-        protected override WebRequest CreateWebRequest()
+        private string createQueryParameters()
         {
-            var req = base.CreateWebRequest();
+            StringBuilder query = new StringBuilder(@"?");
 
             query.Append($@"type={scope.ToString().ToLowerInvariant()}");
             query.Append($@"&mode={ruleset.ShortName}");
@@ -92,10 +93,9 @@ namespace osu.Game.Online.API.Requests
             query.Append($@"&user_id={beatmapInfo.Metadata.Author.OnlineID}");
 
             foreach (var mod in mods)
-                req.AddParameter(@"mods[]", mod.Acronym);
+                query.Append($@"&mods[]={mod.Acronym}");
 
-            req.AddParameter(@"limit", (scope.RequiresSupporter(mods.Any()) ? MAX_SCORES_PER_REQUEST : DEFAULT_SCORES_PER_REQUEST).ToString(CultureInfo.InvariantCulture));
-            return req;
+            return query.ToString();
         }
 
         public bool Equals(GetScoresRequest? other)

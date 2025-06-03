@@ -38,7 +38,7 @@ public BindableNumber<float> ObjectSpacing { get; } = new BindableFloat
     Precision = 0.01f,
 };
 
-public override string SettingDescription => ObjectSpacing.IsDefault ? string.Empty : $"{ObjectSpacing.Value:N2}x";
+// public override string SettingDescription => ObjectSpacing.IsDefault ? string.Empty : $"{ObjectSpacing.Value:N2}x";
 
 private const double min_break_duration = 1000;
 

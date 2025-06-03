@@ -88,11 +88,11 @@ namespace osu.Game.Online.Leaderboards
                         return;
                     }
 
-                    if (newCriteria.Beatmap.OnlineID <= 0 || newCriteria.Beatmap.Status <= BeatmapOnlineStatus.Pending)
-                    {
-                        scores.Value = LeaderboardScores.Failure(LeaderboardFailState.BeatmapUnavailable);
-                        return;
-                    }
+                    // if (newCriteria.Beatmap.OnlineID <= 0 || newCriteria.Beatmap.Status <= BeatmapOnlineStatus.Pending)
+                    // {
+                    //     scores.Value = LeaderboardScores.Failure(LeaderboardFailState.BeatmapUnavailable);
+                    //     return;
+                    // }
 
                     if ((newCriteria.Scope.RequiresSupporter(newCriteria.ExactMods != null)) && !api.LocalUser.Value.IsSupporter)
                     {

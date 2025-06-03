@@ -11,9 +11,9 @@ namespace osu.Game.Online
             APIClientSecret = @"5nKGpRnRebh0P8Pq5RbbiGga0XBaBPWbu9SQldpZ";
             APIClientID = "1";
             const string spectator_server_root_url = @"http://localhost:8081";
-            SpectatorUrl = $@"{spectator_server_root_url}/signalr/spectator";
-            MultiplayerUrl = $@"{spectator_server_root_url}/signalr/multiplayer";
-            MetadataUrl = $@"{spectator_server_root_url}/signalr/metadata";
+            SpectatorUrl = $@"{spectator_server_root_url}/spectator";
+            MultiplayerUrl = $@"{spectator_server_root_url}/multiplayer";
+            MetadataUrl = $@"{spectator_server_root_url}/metadata";
             BeatmapSubmissionServiceUrl = $@"{APIUrl}/beatmap-submission";
         }
     }
