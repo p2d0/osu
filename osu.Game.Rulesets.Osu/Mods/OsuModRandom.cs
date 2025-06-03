@@ -27,7 +27,7 @@ namespace osu.Game.Rulesets.Osu.Mods
     /// <summary>
     /// Mod that randomises the positions of the <see cref="HitObject"/>s
     /// </summary>
-    public class OsuModRandom : ModRandom, IApplicableToBeatmap, IUpdatableByPlayfield, IApplicableToDrawableRuleset<OsuHitObject>
+    public class OsuModRandom : ModRandom, IApplicableToBeatmap, IApplicableToDrawableRuleset<OsuHitObject>
     {
         public override LocalisableString Description => "It never gets boring!";
 
@@ -206,54 +206,54 @@ namespace osu.Game.Rulesets.Osu.Mods
             inputManager = ((DrawableOsuRuleset)drawableRuleset).KeyBindingInputManager;
         }
 
-        public void Update(Playfield playfield)
-        {
-            var padding = 200;
-            // Get current cursor position
-            var cursorPos = playfield.Cursor.AsNonNull().ActiveCursor.DrawPosition;
-            if(cursorPos.X > (playfield.DrawPosition.X + playfield.DrawWidth) || cursorPos.Y > (playfield.DrawPosition.Y + playfield.DrawHeight ))
-            {
-                Logger.Log($"Cursor position is out of bounds: {cursorPos}");
-                var offsetX = cursorPos.X > playfield.DrawWidth ? -cursorPos.X + padding : 0;
-                var offsetY = cursorPos.Y < playfield.DrawHeight ? -cursorPos.Y + padding : 0;
-                // inputManager.MoveMouseTo(new Vector2(1000,500));
-                playfield.Cursor.ActiveCursor.MoveTo(new Vector2(200,200), 0, Easing.None);
-                // new MousePositionAbsoluteInput { Position = playfield.ToScreenSpace(new Vector2(200,200)) }.Apply(inputManager.CurrentState, inputManager);
-                playfield.MoveTo(new Vector2(offsetX, offsetY), 0, Easing.None);
-                return;
-            }
+        // public void Update(Playfield playfield)
+        // {
+        //     var padding = 200;
+        //     // Get current cursor position
+        //     var cursorPos = playfield.Cursor.AsNonNull().ActiveCursor.DrawPosition;
+        //     if(cursorPos.X > (playfield.DrawPosition.X + playfield.DrawWidth) || cursorPos.Y > (playfield.DrawPosition.Y + playfield.DrawHeight ))
+        //     {
+        //         Logger.Log($"Cursor position is out of bounds: {cursorPos}");
+        //         var offsetX = cursorPos.X > playfield.DrawWidth ? -cursorPos.X + padding : 0;
+        //         var offsetY = cursorPos.Y < playfield.DrawHeight ? -cursorPos.Y + padding : 0;
+        //         // inputManager.MoveMouseTo(new Vector2(1000,500));
+        //         playfield.Cursor.ActiveCursor.MoveTo(new Vector2(200,200), 0, Easing.None);
+        //         // new MousePositionAbsoluteInput { Position = playfield.ToScreenSpace(new Vector2(200,200)) }.Apply(inputManager.CurrentState, inputManager);
+        //         playfield.MoveTo(new Vector2(offsetX, offsetY), 0, Easing.None);
+        //         return;
+        //     }
 
-            if(cursorPos.X < 0 || cursorPos.Y < 0)
-            {
-                Logger.Log($"Cursor position is out of bounds: {cursorPos}");
-                var offsetX = cursorPos.X < 0 ? -cursorPos.X - padding : 0;
-                var offsetY = cursorPos.Y < 0 ? -cursorPos.Y - padding : 0;
-                // inputManager.MoveMouseTo(new Vector2(1000,500));
-                // playfield.Cursor.ActiveCursor.MoveTo(new Vector2(200,200), 0, Easing.None);
-                // new MousePositionAbsoluteInput { Position = playfield.ToScreenSpace(new Vector2(200,200)) }.Apply(inputManager.CurrentState, inputManager);
-                playfield.MoveTo(new Vector2(offsetX, offsetY), 0, Easing.None);
-                // playfield.Cursor.ActiveCursor.
-                // Moved += 1;
-            }
+        //     if(cursorPos.X < 0 || cursorPos.Y < 0)
+        //     {
+        //         Logger.Log($"Cursor position is out of bounds: {cursorPos}");
+        //         var offsetX = cursorPos.X < 0 ? -cursorPos.X - padding : 0;
+        //         var offsetY = cursorPos.Y < 0 ? -cursorPos.Y - padding : 0;
+        //         // inputManager.MoveMouseTo(new Vector2(1000,500));
+        //         // playfield.Cursor.ActiveCursor.MoveTo(new Vector2(200,200), 0, Easing.None);
+        //         // new MousePositionAbsoluteInput { Position = playfield.ToScreenSpace(new Vector2(200,200)) }.Apply(inputManager.CurrentState, inputManager);
+        //         playfield.MoveTo(new Vector2(offsetX, offsetY), 0, Easing.None);
+        //         // playfield.Cursor.ActiveCursor.
+        //         // Moved += 1;
+        //     }
 
-            // Logger.Log($"Cursor position: {cursorPos}");
-            // Logger.Log($"Playfield: {playfield.DrawWidth}x{playfield.DrawHeight}");
+        //     // Logger.Log($"Cursor position: {cursorPos}");
+        //     // Logger.Log($"Playfield: {playfield.DrawWidth}x{playfield.DrawHeight}");
 
-            // Calculate screen center
-            // var screenCenter = new Vector2(playfield.DrawWidth / 2, playfield.DrawHeight / 2);
+        //     // Calculate screen center
+        //     // var screenCenter = new Vector2(playfield.DrawWidth / 2, playfield.DrawHeight / 2);
 
-            // // Calculate cursor's offset from center
-            // var cursorOffset = cursorPos - screenCenter;
+        //     // // Calculate cursor's offset from center
+        //     // var cursorOffset = cursorPos - screenCenter;
 
-            // // Calculate desired playfield offset (scaled by extension factor)
-            // var extension = ExtendPlayArea.Value ? PlayAreaExtension.Value : 0;
-            // var targetOffset = new Vector2(
-            //     extension * (cursorOffset.X / screenCenter.X),
-            //     extension * (cursorOffset.Y / screenCenter.Y)
-            // );
+        //     // // Calculate desired playfield offset (scaled by extension factor)
+        //     // var extension = ExtendPlayArea.Value ? PlayAreaExtension.Value : 0;
+        //     // var targetOffset = new Vector2(
+        //     //     extension * (cursorOffset.X / screenCenter.X),
+        //     //     extension * (cursorOffset.Y / screenCenter.Y)
+        //     // );
 
-            // // Apply the offset to the playfield
-        }
+        //     // // Apply the offset to the playfield
+        // }
 
         private float getRandomOffset(float stdDev)
         {
