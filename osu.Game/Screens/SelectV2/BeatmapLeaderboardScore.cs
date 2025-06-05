@@ -17,6 +17,8 @@ using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
 using osu.Framework.Platform;
+using osu.Game.Beatmaps;
+using osu.Game.Beatmaps.Drawables;
 using osu.Game.Configuration;
 using osu.Game.Extensions;
 using osu.Game.Graphics;
@@ -66,6 +68,9 @@ namespace osu.Game.Screens.SelectV2
 
         [Resolved]
         private ScoreManager scoreManager { get; set; } = null!;
+
+        [Resolved]
+        private BeatmapManager beatmapManager { get; set; } = null!;
 
         [Resolved]
         private OsuConfigManager config { get; set; } = null!;
@@ -137,12 +142,17 @@ namespace osu.Game.Screens.SelectV2
         }
 
         [BackgroundDependencyLoader]
-        private void load()
+        private void load(OsuColour colours)
         {
             foregroundColour = colourProvider.Background5;
             backgroundColour = colourProvider.Background3;
             totalScoreBackgroundGradient = ColourInfo.GradientHorizontal(backgroundColour.Opacity(0), backgroundColour);
             personalBestGradient = ColourInfo.GradientHorizontal(personal_best_gradient_left, personal_best_gradient_right);
+
+
+            var ruleset = score.BeatmapInfo.Ruleset.CreateInstance();
+            var beatmap = beatmapManager.GetWorkingBeatmap(score.BeatmapInfo);
+            var starRating = ruleset.CreateDifficultyCalculator(beatmap).Calculate(score.Mods).StarRating;
 
             Child = new Container
             {
@@ -432,6 +442,7 @@ namespace osu.Game.Screens.SelectV2
                                                             Spacing = new Vector2(0f, -2f),
                                                             Children = new Drawable[]
                                                             {
+                                                                new StarRatingDisplay(new StarDifficulty(starRating,score.MaxCombo),StarRatingDisplaySize.Small, animated: true),
                                                                 new OsuSpriteText
                                                                 {
                                                                     Anchor = Anchor.TopRight,
@@ -512,6 +523,8 @@ namespace osu.Game.Screens.SelectV2
         {
             (BeatmapsetsStrings.ShowScoreboardHeadersCombo.ToUpper(), model.MaxCombo.ToString().Insert(model.MaxCombo.ToString().Length, "x")),
             (BeatmapsetsStrings.ShowScoreboardHeadersAccuracy.ToUpper(), model.DisplayAccuracy),
+            (BeatmapsetsStrings.ShowScoreboardHeadersMiss.ToUpper(), model.GetStatisticsForDisplay().First(s => s.Result == HitResult.Miss).Count.ToLocalisableString("N0")),
+            // ("Star Rate".ToUpper(),new StarRatingDisplay(new StarDifficulty(model.BeatmapInfo.StarRating,value.MaxCombo)))
         };
 
         protected override bool OnHover(HoverEvent e)

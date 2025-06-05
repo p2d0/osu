@@ -12,6 +12,7 @@ using osu.Framework.Graphics.Cursor;
 using osu.Framework.Graphics.Effects;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Localisation;
+using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Sprites;
@@ -24,6 +25,8 @@ using osu.Game.Scoring;
 using osu.Game.Utils;
 using osuTK;
 using osuTK.Graphics;
+using osu.Game.Beatmaps.Drawables;
+using osu.Game.Beatmaps;
 
 namespace osu.Game.Screens.SelectV2
 {
@@ -94,6 +97,9 @@ namespace osu.Game.Screens.SelectV2
                 [Resolved]
                 private OverlayColourProvider colourProvider { get; set; } = null!;
 
+                [Resolved]
+                private BeatmapManager beatmapManager { get; set; } = null!;
+
                 public ScoreInfo Score
                 {
                     set
@@ -106,11 +112,16 @@ namespace osu.Game.Screens.SelectV2
 
                         double multiplier = 1.0;
 
+                        // var ruleset = value.BeatmapInfo.Ruleset.CreateInstance();
+                        // var beatmap = beatmapManager.GetWorkingBeatmap(value.BeatmapInfo);
+                        // var starRating = ruleset.CreateDifficultyCalculator(beatmap).Calculate(value.Mods).StarRating;
                         foreach (var mod in value.Mods)
                             multiplier *= mod.ScoreMultiplier;
-
+                        // starRatingDisplay.Current.Value = value.BeatmapInfo.StarRating;
                         var generalStatistics = new[]
                         {
+                            // new StatisticRow("STAR RATE", colourProvider.Content2, starRating.FormatStarRating()),
+                            // new StatisticsRow("Performance Breakdown", () => new PerformanceBreakdownChart(score, playableBeatmap)),
                             new StatisticRow("Score Multiplier", colourProvider.Content2, ModUtils.FormatScoreMultiplier(multiplier)),
                             new StatisticRow(BeatmapsetsStrings.ShowScoreboardHeadersCombo, colourProvider.Content2, value.MaxCombo.ToLocalisableString(@"0\x")),
                             new StatisticRow(BeatmapsetsStrings.ShowScoreboardHeadersAccuracy, colourProvider.Content2, value.Accuracy.FormatAccuracy()),
@@ -126,7 +137,9 @@ namespace osu.Game.Screens.SelectV2
 
                         statistics.ChildrenEnumerable = judgementsStatistics
                                                         .Append(Empty().With(d => d.Height = 20))
-                                                        .Concat(generalStatistics);
+                            .Concat(generalStatistics);
+                            // .Prepend(new StarRatingDisplay(new StarDifficulty(starRating,value.MaxCombo), animated: true))
+                            // ;
                     }
                 }
 
