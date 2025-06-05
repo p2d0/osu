@@ -13,6 +13,7 @@ using osu.Framework.Audio;
 using osu.Framework.Audio.Sample;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
+using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Pooling;
 using osu.Framework.Threading;
 using osu.Framework.Utils;
@@ -317,7 +318,12 @@ namespace osu.Game.Screens.SelectV2
                 }
             }
 
-            RequestRecommendedSelection(items.Select(i => i.Model).OfType<BeatmapInfo>());
+            var beatmaps = items.Select(i => i.Model).OfType<BeatmapInfo>();
+
+            if (beatmaps.Any(b => b.Equals(CurrentSelection as BeatmapInfo)))
+                return;
+
+            RequestRecommendedSelection(beatmaps);
         }
 
         protected override bool CheckValidForGroupSelection(CarouselItem item)
@@ -495,7 +501,7 @@ namespace osu.Game.Screens.SelectV2
 
         private ScheduledDelegate? loadingDebounce;
 
-        public void Filter(FilterCriteria criteria)
+        public void Filter(FilterCriteria criteria, bool showLoadingImmediately = false)
         {
             bool resetDisplay = grouping.BeatmapSetsGroupedTogether != BeatmapCarouselFilterGrouping.ShouldGroupBeatmapsTogether(criteria);
 
@@ -503,9 +509,12 @@ namespace osu.Game.Screens.SelectV2
 
             loadingDebounce ??= Scheduler.AddDelayed(() =>
             {
+                if (loading.State.Value == Visibility.Visible)
+                    return;
+
                 Scroll.FadeColour(OsuColour.Gray(0.5f), 1000, Easing.OutQuint);
                 loading.Show();
-            }, 250);
+            }, showLoadingImmediately ? 0 : 250);
 
             FilterAsync(resetDisplay).ContinueWith(_ => Schedule(() =>
             {
@@ -609,15 +618,8 @@ namespace osu.Game.Screens.SelectV2
             if (carouselItems?.Any() != true)
                 return false;
 
-            // If set grouping is available, this is the fastest way to retrieve sets for randomisation.
+            // This is the fastest way to retrieve sets for randomisation.
             ICollection<BeatmapSetInfo> visibleSets = grouping.SetItems.Keys;
-
-            // If not, we need to do an expensive copy.
-            //
-            // There's probably a more efficient way to handle this. Maybe the grouping filter should always expose grouped sets regardless
-            // as that process is done asynchronously.
-            if (!visibleSets.Any())
-                visibleSets = carouselItems.Select(i => i.Model).OfType<BeatmapInfo>().Select(b => b.BeatmapSet!).Distinct().ToList();
 
             if (CurrentSelection is BeatmapInfo beatmapInfo)
             {
