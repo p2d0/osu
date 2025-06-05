@@ -199,10 +199,13 @@ namespace osu.Game.Screens.SelectV2
                                                     },
                                                 }
                                             },
-                                            Empty(),
+                                            // Empty(),
                                             new Container
                                             {
                                                 RelativeSizeAxes = Axes.Both,
+                                                Size = new Vector2(0.75f, 1),
+                                                Anchor = Anchor.TopRight,
+                                                Origin = Anchor.TopRight,
                                                 Children = new Drawable[]
                                                 {
                                                     rightGradientBackground = new Box
