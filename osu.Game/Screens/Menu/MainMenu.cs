@@ -501,10 +501,10 @@ namespace osu.Game.Screens.Menu
             if (holdTime >= required_hold_time)
             {
                 ssv2Sample?.Play();
-                this.Push(new SoloSongSelect());
+                this.Push(new PlaySongSelect());
             }
             else
-                this.Push(new PlaySongSelect());
+                this.Push(new SoloSongSelect());
         }
 
         private void loadSongSelectV2Samples(AudioManager audio)
