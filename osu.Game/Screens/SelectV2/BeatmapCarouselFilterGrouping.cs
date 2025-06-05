@@ -135,7 +135,7 @@ namespace osu.Game.Screens.SelectV2
                 return false;
 
             // In the majority case we group sets together for display.
-            return true;
+            return false;
         }
 
         private List<GroupMapping> getGroups(List<CarouselItem> items, FilterCriteria criteria)
