@@ -442,16 +442,29 @@ namespace osu.Game.Screens.SelectV2
                                                             Spacing = new Vector2(0f, -2f),
                                                             Children = new Drawable[]
                                                             {
-                                                                new StarRatingDisplay(new StarDifficulty(starRating,score.MaxCombo),StarRatingDisplaySize.Small, animated: true),
-                                                                new OsuSpriteText
-                                                                {
+                                                                new FillFlowContainer {
+                                                                    AutoSizeAxes = Axes.Both,
+                                                                    Direction = FillDirection.Horizontal,
                                                                     Anchor = Anchor.TopRight,
                                                                     Origin = Anchor.TopRight,
-                                                                    UseFullGlyphHeight = false,
-                                                                    Current = scoreManager.GetBindableTotalScoreString(score),
-                                                                    Spacing = new Vector2(-1.5f),
-                                                                    Font = OsuFont.Style.Subtitle.With(weight: FontWeight.Light, fixedWidth: true),
-                                                                    Shear = sheared ? -OsuGame.SHEAR : Vector2.Zero,
+                                                                    Children = new Drawable[] {
+                                                                        new StarRatingDisplay(new StarDifficulty(starRating,score.MaxCombo),StarRatingDisplaySize.Small, animated: true)
+                                                                        {
+                                                                            // Margin = new MarginPadding { Vertical = 5 },
+                                                                            // Anchor = Anchor.TopRight,
+                                                                            // Origin = Anchor.TopRight,
+                                                                        },
+                                                                        new OsuSpriteText
+                                                                        {
+                                                                            // Anchor = Anchor.TopRight,
+                                                                            // Origin = Anchor.TopRight,
+                                                                            UseFullGlyphHeight = false,
+                                                                            Current = scoreManager.GetBindableTotalScoreString(score),
+                                                                            // Spacing = new Vector2(-1.5f),
+                                                                            Font = OsuFont.Style.Subtitle.With(weight: FontWeight.Light, fixedWidth: true),
+                                                                            Shear = sheared ? -OsuGame.SHEAR : Vector2.Zero,
+                                                                        },
+                                                                    }
                                                                 },
                                                                 new InputBlockingContainer
                                                                 {
@@ -493,7 +506,7 @@ namespace osu.Game.Screens.SelectV2
                 switch (s.NewValue)
                 {
                     case ScoringMode.Standardised:
-                        rightContent.Width = 170;
+                        rightContent.Width = 220;
                         break;
 
                     case ScoringMode.Classic:
