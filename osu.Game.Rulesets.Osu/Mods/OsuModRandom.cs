@@ -78,6 +78,30 @@ namespace osu.Game.Rulesets.Osu.Mods
         [SettingSource("Squarish angle", "Squareish angle")]
         public Bindable<bool> Squareish { get; } = new BindableBool(false);
 
+        public enum AngleEnum {
+            Square,
+            Star,
+            FourtyFive,
+        }
+
+        public float GetAngleValue()
+        {
+            return AngleValues[Angle.Value];
+        }
+
+        private static readonly Dictionary<AngleEnum, float> AngleValues = new Dictionary<AngleEnum, float>
+        {
+            { AngleEnum.Square, 1.57079f }, // 90 degrees in radians
+            { AngleEnum.Star, 2.51327f },   // ~36 degrees in radians
+            { AngleEnum.FourtyFive, 0.785398f } // 45 degrees in radians
+        };
+
+        [SettingSource("Angle", "Angle selector")]
+        public Bindable<AngleEnum> Angle { get; } = new Bindable<AngleEnum>
+        {
+            Default = AngleEnum.Square,
+        };
+
 
         [SettingSource("Extend playarea", "Extend playarea")]
         public Bindable<bool> ExtendPlayArea { get; } = new BindableBool(false);
@@ -296,7 +320,7 @@ namespace osu.Game.Rulesets.Osu.Mods
             Logger.Log($"relativeAngle {relativeAngle} angle {angle}");
 
             if(Squareish.Value)
-                relativeAngle = 1.57079f;
+                relativeAngle = GetAngleValue();
 
             return flowDirection ? -relativeAngle : relativeAngle;
         }
@@ -323,7 +347,7 @@ namespace osu.Game.Rulesets.Osu.Mods
             float relativeAngle = (float)Math.PI - angle;
 
             if(Squareish.Value)
-                relativeAngle = 1.57079f;
+                relativeAngle = GetAngleValue();
 
             return flowDirection ? -relativeAngle : relativeAngle;
         }
