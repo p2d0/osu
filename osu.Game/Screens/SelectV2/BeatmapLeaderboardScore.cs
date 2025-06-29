@@ -336,6 +336,7 @@ namespace osu.Game.Screens.SelectV2
                                                             score.MaxCombo == score.GetMaximumAchievableCombo(), 60),
                                                         new ScoreComponentLabel(BeatmapsetsStrings.ShowScoreboardHeadersAccuracy.ToUpper(), score.DisplayAccuracy, score.Accuracy == 1,
                                                             55),
+                                                            new ScoreComponentLabel(BeatmapsetsStrings.ShowScoreboardHeadersMiss.ToUpper(), score.GetStatisticsForDisplay().First(s => s.Result == HitResult.Miss).Count.ToLocalisableString("N0"), true, 30),
                                                     },
                                                     Alpha = 0,
                                                 }
@@ -512,7 +513,7 @@ namespace osu.Game.Screens.SelectV2
                 switch (s.NewValue)
                 {
                     case ScoringMode.Standardised:
-                        rightContent.Width = 250;
+                        rightContent.Width = 220;
                         break;
 
                     case ScoringMode.Classic:
@@ -542,6 +543,7 @@ namespace osu.Game.Screens.SelectV2
         {
             (BeatmapsetsStrings.ShowScoreboardHeadersCombo.ToUpper(), model.MaxCombo.ToString().Insert(model.MaxCombo.ToString().Length, "x")),
             (BeatmapsetsStrings.ShowScoreboardHeadersAccuracy.ToUpper(), model.DisplayAccuracy),
+            (BeatmapsetsStrings.ShowScoreboardHeadersMiss.ToUpper(), model.GetStatisticsForDisplay().First(s => s.Result == HitResult.Miss).Count.ToLocalisableString("N0")),
         };
 
         protected override bool OnHover(HoverEvent e)
