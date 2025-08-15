@@ -90,6 +90,9 @@ namespace osu.Game.Online.API.Requests.Responses
         [JsonProperty("legacy_score_id")]
         public ulong? LegacyScoreId { get; set; }
 
+        [JsonProperty("pauses")]
+        public int[] Pauses { get; set; } = [];
+
         #region osu-web API additions (not stored to database).
 
         [JsonProperty("id")]
@@ -264,6 +267,7 @@ namespace osu.Game.Online.API.Requests.Responses
             Checksum = score.BeatmapInfo.MD5Hash,
             Statistics = score.Statistics.Where(kvp => kvp.Value != 0).ToDictionary(),
             MaximumStatistics = score.MaximumStatistics.Where(kvp => kvp.Value != 0).ToDictionary(),
+            Pauses = score.Pauses.ToArray(),
         };
     }
 }
