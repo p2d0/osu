@@ -152,9 +152,9 @@ namespace osu.Game.Screens.SelectV2
             backgroundColour = colourProvider.Background3;
             totalScoreBackgroundGradient = ColourInfo.GradientHorizontal(backgroundColour.Opacity(0), backgroundColour);
 
-            var ruleset = score.BeatmapInfo.Ruleset.CreateInstance();
-            var beatmap = beatmapManager.GetWorkingBeatmap(score.BeatmapInfo);
-            var starRating = ruleset.CreateDifficultyCalculator(beatmap).Calculate(score.Mods).StarRating;
+            var ruleset = Score.BeatmapInfo.Ruleset.CreateInstance();
+            var beatmap = beatmapManager.GetWorkingBeatmap(Score.BeatmapInfo);
+            var starRating = ruleset.CreateDifficultyCalculator(beatmap).Calculate(Score.Mods).StarRating;
 
             Child = new Container
             {
@@ -338,7 +338,7 @@ namespace osu.Game.Screens.SelectV2
                                                             Score.MaxCombo == Score.GetMaximumAchievableCombo(), 60),
                                                         new ScoreComponentLabel(BeatmapsetsStrings.ShowScoreboardHeadersAccuracy.ToUpper(), Score.DisplayAccuracy, Score.Accuracy == 1,
                                                             55),
-                                                            new ScoreComponentLabel(BeatmapsetsStrings.ShowScoreboardHeadersMiss.ToUpper(), score.GetStatisticsForDisplay().First(s => s.Result == HitResult.Miss).Count.ToLocalisableString("N0"), true, 30),
+                                                            new ScoreComponentLabel(BeatmapsetsStrings.ShowScoreboardHeadersMiss.ToUpper(), Score.GetStatisticsForDisplay().First(s => s.Result == HitResult.Miss).Count.ToLocalisableString("N0"), true, 30),
                                                     },
                                                     Alpha = 0,
                                                 }
@@ -450,7 +450,7 @@ namespace osu.Game.Screens.SelectV2
                                                         Anchor = Anchor.TopRight,
                                                         Origin = Anchor.TopRight,
                                                         Children = new Drawable[] {
-                                                            new StarRatingDisplay(new StarDifficulty(starRating,score.MaxCombo),StarRatingDisplaySize.Small, animated: true)
+                                                            new StarRatingDisplay(new StarDifficulty(starRating,Score.MaxCombo),StarRatingDisplaySize.Small, animated: true)
                                                             {
                                                                 // Margin = new MarginPadding { Vertical = 5 },
                                                                 // Anchor = Anchor.TopRight,
@@ -461,7 +461,7 @@ namespace osu.Game.Screens.SelectV2
                                                                 // Anchor = Anchor.TopRight,
                                                                 // Origin = Anchor.TopRight,
                                                                 UseFullGlyphHeight = false,
-                                                                Current = scoreManager.GetBindableTotalScoreString(score),
+                                                                Current = scoreManager.GetBindableTotalScoreString(Score),
                                                                 // Spacing = new Vector2(-1.5f),
                                                                 Font = OsuFont.Style.Subtitle.With(weight: FontWeight.Light, fixedWidth: true),
                                                                 Shear = sheared ? -OsuGame.SHEAR : Vector2.Zero,
