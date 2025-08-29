@@ -19,5 +19,9 @@ namespace osu.Game.Rulesets.Mods
 
         [SettingSource("Seed", "Use a custom seed instead of a random one", SettingControlType = typeof(SettingsNumberBox))]
         public Bindable<int?> Seed { get; } = new Bindable<int?>();
+
+        [SettingSource("Hardcore random", "Remove circle padding and unnecessary shifting")]
+        public Bindable<bool> Hardcore { get; } = new Bindable<bool>();
+
     }
 }
