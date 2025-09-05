@@ -8,51 +8,70 @@ using osu.Game.Beatmaps.ControlPoints;
 using osu.Game.Rulesets.Osu.Beatmaps;
 using osu.Game.Rulesets.Osu.Mods;
 using osu.Game.Rulesets.Osu.Objects;
+using osu.Game.Beatmaps.Timing;
 using osuTK;
+using osu.Game.Rulesets.Mods;
 
 namespace osu.Game.Rulesets.Osu.Tests.Mods
 {
-    public partial class TestSceneOsuModRandom : OsuModTestScene
+    public partial class TestSceneOsuModSquare : OsuModTestScene
     {
         [Test]
-        public void TestInfiniteAreaAuto() => CreateModTest(new ModTestData
+        public void TestRemovingBreaks() => CreateModTest(new ModTestData
         {
-            Mod = new OsuModRandom
+            Mod = new OsuModSquare
             {
-                AngleSharpness = { Value = 7 },
-                InfinitePlayArea = { Value = true },
-                Hardcore = { Value = true },
-                StreamDistance =  { Value = 25 },
-                AimDistanceMultiplier = { Value = 5.0f }
+            },
+            CreateBeatmap = () =>
+            {
+                var beatmap = jumpBeatmap();
+                beatmap.Breaks.Add(new BreakPeriod(0, 10000));
+                return beatmap;
             },
             Autoplay = true,
             PassCondition = () => true
         });
 
         [Test]
-        public void TestInfiniteAreaManual() => CreateModTest(new ModTestData
+        public void TestWithRandomBreaks() => CreateModTest(new ModTestData
         {
-            Mod = new OsuModRandom
-            {
-                AngleSharpness = { Value = 7 },
-                InfinitePlayArea = { Value = true },
-                Hardcore = { Value = true },
-                StreamDistance =  { Value = 25 },
-                AimDistanceMultiplier = { Value = 5.0f }
+            Mods = new Mod[] {
+                new OsuModSquare(),
+                new OsuModRandom()
             },
-            Autoplay = false,
+            CreateBeatmap = () =>
+            {
+                var beatmap = jumpBeatmap();
+                beatmap.Breaks.Add(new BreakPeriod(0, 10000));
+                return beatmap;
+            },
+            Autoplay = true,
             PassCondition = () => true
         });
+
+
+        // [Test]
+        // public void TestInfiniteAreaManual() => CreateModTest(new ModTestData
+        // {
+        //     Mod = new OsuModRandom
+        //     {
+        //         AngleSharpness = { Value = 7 },
+        //         InfinitePlayArea = { Value = true },
+        //         Hardcore = { Value = true },
+        //         StreamDistance =  { Value = 25 },
+        //         AimDistanceMultiplier = { Value = 5.0f }
+        //     },
+        //     Autoplay = false,
+        //     PassCondition = () => true
+        // });
 
         [TestCase(1)]
         [TestCase(7)]
         [TestCase(10)]
         public void TestDefaultBeatmap(float angleSharpness) => CreateModTest(new ModTestData
         {
-            Mod = new OsuModRandom
+            Mod = new OsuModSquare
             {
-                AngleSharpness = { Value = angleSharpness },
-                InfinitePlayArea = { Value = true }
             },
             Autoplay = true,
             PassCondition = () => true
@@ -63,9 +82,9 @@ namespace osu.Game.Rulesets.Osu.Tests.Mods
         [TestCase(10)]
         public void TestJumpBeatmap(float angleSharpness) => CreateModTest(new ModTestData
         {
-            Mod = new OsuModRandom
+            Mod = new OsuModSquare
             {
-                AngleSharpness = { Value = angleSharpness }
+                // AngleSharpness = { Value = angleSharpness }
             },
             CreateBeatmap = jumpBeatmap,
             Autoplay = true,
@@ -77,9 +96,9 @@ namespace osu.Game.Rulesets.Osu.Tests.Mods
         [TestCase(10)]
         public void TestStreamBeatmap(float angleSharpness) => CreateModTest(new ModTestData
         {
-            Mod = new OsuModRandom
+            Mod = new OsuModSquare
             {
-                AngleSharpness = { Value = angleSharpness }
+                // AngleSharpness = { Value = angleSharpness }
             },
             CreateBeatmap = streamBeatmap,
             Autoplay = true,
