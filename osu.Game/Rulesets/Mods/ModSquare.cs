@@ -6,7 +6,7 @@ namespace osu.Game.Rulesets.Mods
     public abstract class ModSquare : Mod
     {
         public override string Name => "Square";
-        public override string Acronym => "SQ";
+        public override string Acronym => "AQ";
         public override ModType Type => ModType.Conversion;
         public override double ScoreMultiplier => 1;
     }

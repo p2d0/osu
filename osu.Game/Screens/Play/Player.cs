@@ -20,6 +20,7 @@ using osu.Framework.Screens;
 using osu.Framework.Threading;
 using osu.Game.Audio;
 using osu.Game.Beatmaps;
+using osu.Game.Beatmaps.Timing;
 using osu.Game.Configuration;
 using osu.Game.Database;
 using osu.Game.Extensions;
@@ -292,7 +293,7 @@ namespace osu.Game.Screens.Play
             // needs to exist in frame stable content, but is used by underlay layers so make sure assigned early.
             breakTracker = new BreakTracker(DrawableRuleset.GameplayStartTime, ScoreProcessor)
             {
-                Breaks = Beatmap.Value.Beatmap.Breaks
+                Breaks = playableBeatmap.Breaks
             };
 
             // load the skinning hierarchy first.
