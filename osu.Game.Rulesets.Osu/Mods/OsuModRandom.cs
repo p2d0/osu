@@ -21,6 +21,8 @@ using osu.Framework.Graphics;
 using osuTK;
 using osu.Framework.Extensions.ObjectExtensions;
 using osu.Framework.Input.StateChanges;
+using osu.Framework.Extensions.IEnumerableExtensions;
+using osu.Framework.Graphics.Containers;
 
 namespace osu.Game.Rulesets.Osu.Mods
 {
@@ -103,11 +105,23 @@ namespace osu.Game.Rulesets.Osu.Mods
         };
 
 
+
         [SettingSource("Extend playarea", "Extend playarea")]
         public Bindable<bool> ExtendPlayArea { get; } = new BindableBool(false);
 
         [SettingSource("Infinite playarea", "Infinite playarea")]
         public Bindable<bool> InfinitePlayArea { get; } = new BindableBool(false);
+
+        [SettingSource("SquareMod", "SquareMod")]
+        public Bindable<bool> SquareMod { get; } = new BindableBool(false);
+
+        [SettingSource("Divisor", "Divisor selector")]
+        public BindableInt Divisor { get; } = new BindableInt(2)
+        {
+            MinValue = 1,
+            MaxValue = 16,
+            Default = 2,
+        };
 
 
         // [SettingSource("Square Distance", "Square distance")]
@@ -125,6 +139,9 @@ namespace osu.Game.Rulesets.Osu.Mods
         {
             if (beatmap is not OsuBeatmap osuBeatmap)
                 return;
+
+            if(SquareMod.Value)
+                makeMapSquare(beatmap);
 
             Seed.Value ??= RNG.Next();
 
@@ -169,7 +186,7 @@ namespace osu.Game.Rulesets.Osu.Mods
                 if (i == 0)
                 {
                     positionInfos[i].DistanceFromPrevious = (float)(random.NextDouble() * OsuPlayfield.BASE_SIZE.Y / 2);
-                    Logger.Log($"DistanceFromPrevious i=0 {positionInfos[i].DistanceFromPrevious}");
+                    // Logger.Log($"DistanceFromPrevious i=0 {positionInfos[i].DistanceFromPrevious}");
                     positionInfos[i].RelativeAngle = (float)(random.NextDouble() * 2 * Math.PI - Math.PI);
                 }
                 else
@@ -317,7 +334,7 @@ namespace osu.Game.Rulesets.Osu.Mods
             angle += offset + customOffsetY;
 
             float relativeAngle = (float)Math.PI - angle;
-            Logger.Log($"relativeAngle {relativeAngle} angle {angle}");
+            // Logger.Log($"relativeAngle {relativeAngle} angle {angle}");
 
             if(Squareish.Value)
                 relativeAngle = GetAngleValue();
@@ -378,6 +395,82 @@ namespace osu.Game.Rulesets.Osu.Mods
                                               positionInfos[i - 1].HitObject.NewCombo;
 
             return previousObjectStartedCombo && random.NextDouble() < 0.6f;
+        }
+
+        private void makeMapSquare(IBeatmap beatmap){
+            // The 'is' pattern matching already declares and assigns osuBeatmap if the cast is successful.
+
+            if (beatmap is not OsuBeatmap osuBeatmap)
+                return;
+
+
+            var firstHitObject = beatmap.HitObjects.OfType<OsuHitObject>().FirstOrDefault();
+            if (firstHitObject == null)
+                return;
+
+            // The original code had a redundant LastOrDefault check.
+            var lastTime = beatmap.HitObjects.Last().StartTime;
+
+            var firstTime = firstHitObject.StartTime;
+
+            var hitObjects = new List<OsuHitObject>();
+
+
+            var beatLength = osuBeatmap.ControlPointInfo.TimingPointAt(firstTime).BeatLength / Divisor.Value;
+
+            // if (beatLength <= 0) // Add a safeguard against division by zero or invalid timing points
+            //     beatLength = 200;
+
+            var spacing = 200; // The side length of the square
+
+            do
+            {
+                int cornerIndex = hitObjects.Count % 4;
+                Vector2 position;
+
+                // Determine the position based on which corner we are on
+                switch (cornerIndex)
+                {
+                    case 0: // Bottom-left
+                        position = new Vector2(0, 0);
+                        break;
+                    case 1: // Bottom-right
+                        position = new Vector2(spacing, 0);
+                        break;
+                    case 2: // Top-right
+                        position = new Vector2(spacing, spacing);
+                        break;
+                    case 3: // Top-left
+                        position = new Vector2(0, spacing);
+                        break;
+                    default: // This case will never be reached with % 4
+                        position = Vector2.Zero;
+                        break;
+                }
+
+                var circle = new HitCircle
+                {
+                    Position = position,
+                    // Start a new combo at the beginning of each square
+                    NewCombo = cornerIndex == 0,
+                    Samples = firstHitObject.Samples
+                };
+
+                circle.ApplyDefaults(osuBeatmap.ControlPointInfo, osuBeatmap.Difficulty);
+                // circle.StartTime = firstTime + (beatLength * hitObjects.Count);
+                circle.StartTime = osuBeatmap.ControlPointInfo.GetClosestSnappedTime(firstTime + (beatLength * hitObjects.Count));
+                circle.TimePreempt = firstHitObject.TimePreempt;
+                circle.TimeFadeIn = firstHitObject.TimeFadeIn;
+                // if(osuBeatmap.ControlPointInfo.TimingPointAt(circle.StartTime).BeatLength / 2 > 5)
+                //     beatLength = osuBeatmap.ControlPointInfo.TimingPointAt(circle.StartTime).BeatLength / 2;
+                hitObjects.Add(circle);
+            } while (hitObjects.Last().StartTime < lastTime);
+
+            osuBeatmap.HitObjects = hitObjects;
+
+            beatmap.Breaks.Clear();
+            Logger.Log($"Breaks: {beatmap.Breaks.Count()}");
+            Logger.Log($"TotalBreakTime: {beatmap.TotalBreakTime}ms" );
         }
     }
 }

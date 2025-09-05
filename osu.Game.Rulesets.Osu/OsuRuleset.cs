@@ -188,9 +188,11 @@ namespace osu.Game.Rulesets.Osu
                         new OsuModDifficultyAdjust(),
                         new OsuModClassic(),
                         new OsuModRandom(),
+                        new OsuModSquare(),
                         new OsuModSpacingAdjust(),
                         new OsuModMirror(),
-                        new MultiMod(new OsuModAlternate(), new OsuModSingleTap())
+                        new MultiMod(new OsuModAlternate(), new OsuModSingleTap()),
+                        new OsuModNoSliding(),
                     };
 
                 case ModType.Automation:
