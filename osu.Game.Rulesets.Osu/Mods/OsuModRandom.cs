@@ -126,6 +126,9 @@ namespace osu.Game.Rulesets.Osu.Mods
             Default = 2,
         };
 
+        [SettingSource("Longer jumps get a smaller increase in distance", "Longer jumps get a smaller increase in distance")]
+        public BindableBool PowerJumps { get; } = new BindableBool(false);
+
 
         // [SettingSource("Square Distance", "Square distance")]
         // public BindableInt SquareDistance { get; } = new BindableInt(200)
@@ -170,7 +173,10 @@ namespace osu.Game.Rulesets.Osu.Mods
                     // if(Squareish.Value)
                     //     positionInfos[i].DistanceFromPrevious = SquareDistance.Value;
                     // else
-                    positionInfos[i].DistanceFromPrevious *= AimDistanceMultiplier.Value;
+                    if(PowerJumps.Value)
+                        positionInfos[i].DistanceFromPrevious *= MathF.Pow(AimDistanceMultiplier.Value, 1f - positionInfos[i].DistanceFromPrevious / 640f);
+                    else
+                        positionInfos[i].DistanceFromPrevious *= AimDistanceMultiplier.Value;
 
                     // if(AimDistanceMultiplier.Value >= 1)
                     //     positionInfos[i].DistanceFromPrevious *= MathF.Pow(AimDistanceMultiplier.Value, 1f - positionInfos[i].DistanceFromPrevious / 640f);
