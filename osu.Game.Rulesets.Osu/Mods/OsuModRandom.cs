@@ -67,6 +67,9 @@ namespace osu.Game.Rulesets.Osu.Mods
             Precision = 0.1f
         };
 
+        [SettingSource("Divide by divisor", "Divide distances by divisor")]
+        public Bindable<bool> DivideByDivisor { get; } = new BindableBool(false);
+
         [SettingSource("Stream Distance", "How much bigger the distance")]
         public BindableInt StreamDistance { get; } = new BindableInt(100)
         {
@@ -123,6 +126,9 @@ namespace osu.Game.Rulesets.Osu.Mods
             Default = 2,
         };
 
+        [SettingSource("Longer jumps get a smaller increase in distance", "Longer jumps get a smaller increase in distance")]
+        public BindableBool PowerJumps { get; } = new BindableBool(false);
+
 
         // [SettingSource("Square Distance", "Square distance")]
         // public BindableInt SquareDistance { get; } = new BindableInt(200)
@@ -158,12 +164,18 @@ namespace osu.Game.Rulesets.Osu.Mods
             for (int i = 0; i < positionInfos.Count; i++)
             {
                 originalDistance = positionInfos[i].DistanceFromPrevious;
-                if(positionInfos[i].DistanceFromPrevious < StreamDistance.Value){
+                if (isStream(osuBeatmap, positionInfos,i, originalDistance))
+                {
                     positionInfos[i].DistanceFromPrevious *= StreamDistanceMultiplier.Value;
-                } else {
+                }
+                else
+                {
                     // if(Squareish.Value)
                     //     positionInfos[i].DistanceFromPrevious = SquareDistance.Value;
                     // else
+                    if(PowerJumps.Value)
+                        positionInfos[i].DistanceFromPrevious *= MathF.Pow(AimDistanceMultiplier.Value, 1f - positionInfos[i].DistanceFromPrevious / 640f);
+                    else
                         positionInfos[i].DistanceFromPrevious *= AimDistanceMultiplier.Value;
 
                     // if(AimDistanceMultiplier.Value >= 1)
@@ -174,7 +186,7 @@ namespace osu.Game.Rulesets.Osu.Mods
                 }
                 if (shouldStartNewSection(osuBeatmap, positionInfos, i))
                 {
-                    sectionOffset = originalDistance < StreamDistance.Value ? getRandomOffsetStream(0.008f) : getRandomOffset(0.0008f);
+                    sectionOffset = isStream(osuBeatmap, positionInfos,i, originalDistance) ? getRandomOffsetStream(0.008f) : getRandomOffset(0.0008f);
                     flowDirection = !flowDirection;
                 }
 
@@ -195,11 +207,11 @@ namespace osu.Game.Rulesets.Osu.Mods
                     float flowChangeOffset = 0;
 
                     // Offsets only the angle of the current hit object.
-                    float oneTimeOffset = originalDistance < StreamDistance.Value ? getRandomOffsetStream(0.002f) : getRandomOffset(0.002f);
+                    float oneTimeOffset = isStream(osuBeatmap, positionInfos,i, originalDistance) ? getRandomOffsetStream(0.002f) : getRandomOffset(0.002f);
 
                     if (shouldApplyFlowChange(positionInfos, i))
                     {
-                        flowChangeOffset = originalDistance < StreamDistance.Value ? getRandomOffsetStream(0.002f) : getRandomOffset(0.002f);
+                        flowChangeOffset = isStream(osuBeatmap, positionInfos,i, originalDistance) ? getRandomOffsetStream(0.002f) : getRandomOffset(0.002f);
                         flowDirection = !flowDirection;
                     }
 
@@ -210,7 +222,7 @@ namespace osu.Game.Rulesets.Osu.Mods
                         flowChangeOffset * (playfield_diagonal - positionInfos[i].DistanceFromPrevious);
 
                     // Logger.Log($"totalOffset i={i} {totalOffset}");
-                    positionInfos[i].RelativeAngle = originalDistance < StreamDistance.Value ?
+                    positionInfos[i].RelativeAngle = isStream(osuBeatmap, positionInfos,i, originalDistance) ?
                         getRelativeTargetAngleStream(positionInfos[i].DistanceFromPrevious, totalOffset, flowDirection) :
                         getRelativeTargetAngle(positionInfos[i].DistanceFromPrevious, totalOffset, flowDirection);
                     // Logger.Log($"Distance from previous i={i} {positionInfos[i].DistanceFromPrevious}");
@@ -237,6 +249,81 @@ namespace osu.Game.Rulesets.Osu.Mods
             // Logger.Log($"Count (Lower is better) {count}");
             // Logger.Log($"TotalDistanceDifferece (Lower is better) {totalDistanceDifferece}");
         }
+        // private int Moved = 0;
+
+        private OsuInputManager inputManager = null!;
+
+        public void ApplyToDrawableRuleset(DrawableRuleset<OsuHitObject> drawableRuleset)
+        {
+            // Grab the input manager to disable the user's cursor, and for future use
+            inputManager = ((DrawableOsuRuleset)drawableRuleset).KeyBindingInputManager;
+        }
+
+        // public void Update(Playfield playfield)
+        // {
+        //     var padding = 200;
+        //     // Get current cursor position
+        //     var cursorPos = playfield.Cursor.AsNonNull().ActiveCursor.DrawPosition;
+        //     if(cursorPos.X > (playfield.DrawPosition.X + playfield.DrawWidth) || cursorPos.Y > (playfield.DrawPosition.Y + playfield.DrawHeight ))
+        //     {
+        //         Logger.Log($"Cursor position is out of bounds: {cursorPos}");
+        //         var offsetX = cursorPos.X > playfield.DrawWidth ? -cursorPos.X + padding : 0;
+        //         var offsetY = cursorPos.Y < playfield.DrawHeight ? -cursorPos.Y + padding : 0;
+        //         // inputManager.MoveMouseTo(new Vector2(1000,500));
+        //         playfield.Cursor.ActiveCursor.MoveTo(new Vector2(200,200), 0, Easing.None);
+        //         // new MousePositionAbsoluteInput { Position = playfield.ToScreenSpace(new Vector2(200,200)) }.Apply(inputManager.CurrentState, inputManager);
+        //         playfield.MoveTo(new Vector2(offsetX, offsetY), 0, Easing.None);
+        //         return;
+        //     }
+
+        //     if(cursorPos.X < 0 || cursorPos.Y < 0)
+        //     {
+        //         Logger.Log($"Cursor position is out of bounds: {cursorPos}");
+        //         var offsetX = cursorPos.X < 0 ? -cursorPos.X - padding : 0;
+        //         var offsetY = cursorPos.Y < 0 ? -cursorPos.Y - padding : 0;
+        //         // inputManager.MoveMouseTo(new Vector2(1000,500));
+        //         // playfield.Cursor.ActiveCursor.MoveTo(new Vector2(200,200), 0, Easing.None);
+        //         // new MousePositionAbsoluteInput { Position = playfield.ToScreenSpace(new Vector2(200,200)) }.Apply(inputManager.CurrentState, inputManager);
+        //         playfield.MoveTo(new Vector2(offsetX, offsetY), 0, Easing.None);
+        //         // playfield.Cursor.ActiveCursor.
+        //         // Moved += 1;
+        //     }
+
+        //     // Logger.Log($"Cursor position: {cursorPos}");
+        //     // Logger.Log($"Playfield: {playfield.DrawWidth}x{playfield.DrawHeight}");
+
+        //     // Calculate screen center
+        //     // var screenCenter = new Vector2(playfield.DrawWidth / 2, playfield.DrawHeight / 2);
+
+        //     // // Calculate cursor's offset from center
+        //     // var cursorOffset = cursorPos - screenCenter;
+
+        //     // // Calculate desired playfield offset (scaled by extension factor)
+        //     // var extension = ExtendPlayArea.Value ? PlayAreaExtension.Value : 0;
+        //     // var targetOffset = new Vector2(
+        //     //     extension * (cursorOffset.X / screenCenter.X),
+        //     //     extension * (cursorOffset.Y / screenCenter.Y)
+        //     // );
+
+        //     // // Apply the offset to the playfield
+        // }
+
+        private bool isStream(OsuBeatmap osuBeatmap, List<OsuHitObjectGenerationUtils.ObjectPositionInfo> positionInfos,int i, float originalDistance)
+        {
+            if(DivideByDivisor.Value) {
+                // Logger.Log($"Divisor {osuBeatmap.ControlPointInfo.GetClosestBeatDivisor(positionInfos.HitObject.StartTime)}");
+                var beatLength = osuBeatmap.ControlPointInfo.TimingPointAt(positionInfos[i].HitObject.StartTime).BeatLength;
+                if(i+1 < positionInfos.Count() && positionInfos[i].HitObject is HitObject circle && positionInfos[i+1].HitObject is HitObject nextCircle){
+                    Logger.Log($"{nextCircle.StartTime - circle.StartTime}");
+                    Logger.Log($"beatLength");
+                    return nextCircle.StartTime - circle.StartTime < beatLength / Divisor.Value;
+                }
+                return true;
+            }
+            else
+                return (originalDistance < StreamDistance.Value);
+        }
+
         // private int Moved = 0;
 
         private OsuInputManager inputManager = null!;

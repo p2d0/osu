@@ -30,6 +30,20 @@ namespace osu.Game.Rulesets.Osu.Tests.Mods
         });
 
         [Test]
+        public void TestStreamDetection() => CreateModTest(new ModTestData
+        {
+            Mod = new OsuModRandom
+            {
+                DivideByDivisor = { Value = true },
+                StreamDistance =  { Value = 25 },
+                AimDistanceMultiplier = { Value = 5.0f }
+            },
+            CreateBeatmap = () => createHitCircleBeatmap(new[] { 50 , 100 }, 8, 300, 2 * 300),
+            Autoplay = true,
+            PassCondition = () => true
+        });
+
+        [Test]
         public void TestInfiniteAreaManual() => CreateModTest(new ModTestData
         {
             Mod = new OsuModRandom
