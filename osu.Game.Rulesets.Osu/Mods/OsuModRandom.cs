@@ -259,8 +259,8 @@ namespace osu.Game.Rulesets.Osu.Mods
                     Logger.Log($"{nextCircle.StartTime - circle.StartTime}");
                     Logger.Log($"beatLength");
                     var isStream = nextCircle.StartTime - circle.StartTime < beatLength / Divisor.Value;
-                    if(!isStream && (positionInfos[i].HitObject is HitObject circle2 && positionInfos[i-1].HitObject is HitObject previousCircle))
-                        return circle2.StartTime - previousCircle.StartTime < beatLength / Divisor.Value;
+                    if(!isStream && i > 0 && positionInfos[i-1] != null && positionInfos[i-1].HitObject is HitObject previousCircle)
+                        return circle.StartTime - previousCircle.StartTime < beatLength / Divisor.Value;
                 }
 
                 return true;
