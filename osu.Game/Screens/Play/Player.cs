@@ -292,7 +292,7 @@ namespace osu.Game.Screens.Play
             // needs to exist in frame stable content, but is used by underlay layers so make sure assigned early.
             breakTracker = new BreakTracker(DrawableRuleset.GameplayStartTime, ScoreProcessor)
             {
-                Breaks = Beatmap.Value.Beatmap.Breaks
+                Breaks = playableBeatmap.Breaks
             };
 
             // load the skinning hierarchy first.

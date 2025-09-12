@@ -115,8 +115,8 @@ namespace osu.Game.Rulesets.UI
                     Name = "extended content",
                     Anchor = Anchor.CentreLeft,
                     Origin = Anchor.CentreLeft,
-                    Size = new Vector2(116, MOD_ICON_SIZE.Y),
-                    X = MOD_ICON_SIZE.X - 22,
+                    Size = new Vector2(150, MOD_ICON_SIZE.Y),
+                    X = MOD_ICON_SIZE.X - 42,
                     Children = new Drawable[]
                     {
                         extendedBackground = new Sprite
@@ -129,10 +129,10 @@ namespace osu.Game.Rulesets.UI
                         },
                         extendedText = new OsuSpriteText
                         {
-                            Font = OsuFont.Default.With(size: 34f, weight: FontWeight.Bold),
+                            Font = OsuFont.Default.With(size: 32f, weight: FontWeight.Bold),
                             UseFullGlyphHeight = false,
                             Text = mod.ExtendedIconInformation,
-                            X = 6,
+                            X = 4,
                             Anchor = Anchor.Centre,
                             Origin = Anchor.Centre,
                         },

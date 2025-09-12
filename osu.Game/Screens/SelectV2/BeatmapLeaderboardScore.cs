@@ -36,6 +36,8 @@ using osu.Game.Scoring;
 using osu.Game.Screens.Select;
 using osu.Game.Users;
 using osu.Game.Users.Drawables;
+using osu.Game.Beatmaps;
+using osu.Game.Beatmaps.Drawables;
 using osu.Game.Utils;
 using osuTK;
 using osuTK.Graphics;
@@ -72,6 +74,9 @@ namespace osu.Game.Screens.SelectV2
 
         [Resolved]
         private ScoreManager scoreManager { get; set; } = null!;
+
+        [Resolved]
+        private BeatmapManager beatmapManager { get; set; } = null!;
 
         [Resolved]
         private OsuConfigManager config { get; set; } = null!;
@@ -141,11 +146,15 @@ namespace osu.Game.Screens.SelectV2
         }
 
         [BackgroundDependencyLoader]
-        private void load()
+        private void load(OsuColour colours)
         {
             foregroundColour = colourProvider.Background5;
             backgroundColour = colourProvider.Background3;
             totalScoreBackgroundGradient = ColourInfo.GradientHorizontal(backgroundColour.Opacity(0), backgroundColour);
+
+            var ruleset = Score.BeatmapInfo.Ruleset.CreateInstance();
+            var beatmap = beatmapManager.GetWorkingBeatmap(Score.BeatmapInfo);
+            var starRating = ruleset.CreateDifficultyCalculator(beatmap).Calculate(Score.Mods).StarRating;
 
             Child = new Container
             {
@@ -329,6 +338,7 @@ namespace osu.Game.Screens.SelectV2
                                                             Score.MaxCombo == Score.GetMaximumAchievableCombo(), 60),
                                                         new ScoreComponentLabel(BeatmapsetsStrings.ShowScoreboardHeadersAccuracy.ToUpper(), Score.DisplayAccuracy, Score.Accuracy == 1,
                                                             55),
+                                                            new ScoreComponentLabel(BeatmapsetsStrings.ShowScoreboardHeadersMiss.ToUpper(), Score.GetStatisticsForDisplay().First(s => s.Result == HitResult.Miss).Count.ToLocalisableString("N0"), true, 30),
                                                     },
                                                     Alpha = 0,
                                                 }
@@ -434,15 +444,29 @@ namespace osu.Game.Screens.SelectV2
                                                 Spacing = new Vector2(0f, -2f),
                                                 Children = new Drawable[]
                                                 {
-                                                    new OsuSpriteText
-                                                    {
+                                                    new FillFlowContainer {
+                                                        AutoSizeAxes = Axes.Both,
+                                                        Direction = FillDirection.Horizontal,
                                                         Anchor = Anchor.TopRight,
                                                         Origin = Anchor.TopRight,
-                                                        UseFullGlyphHeight = false,
-                                                        Current = scoreManager.GetBindableTotalScoreString(Score),
-                                                        Spacing = new Vector2(-1.5f),
-                                                        Font = OsuFont.Style.Subtitle.With(weight: FontWeight.Light, fixedWidth: true),
-                                                        Shear = sheared ? -OsuGame.SHEAR : Vector2.Zero,
+                                                        Children = new Drawable[] {
+                                                            new StarRatingDisplay(new StarDifficulty(starRating,Score.MaxCombo),StarRatingDisplaySize.Small, animated: true)
+                                                            {
+                                                                // Margin = new MarginPadding { Vertical = 5 },
+                                                                // Anchor = Anchor.TopRight,
+                                                                // Origin = Anchor.TopRight,
+                                                            },
+                                                            new OsuSpriteText
+                                                            {
+                                                                // Anchor = Anchor.TopRight,
+                                                                // Origin = Anchor.TopRight,
+                                                                UseFullGlyphHeight = false,
+                                                                Current = scoreManager.GetBindableTotalScoreString(Score),
+                                                                // Spacing = new Vector2(-1.5f),
+                                                                Font = OsuFont.Style.Subtitle.With(weight: FontWeight.Light, fixedWidth: true),
+                                                                Shear = sheared ? -OsuGame.SHEAR : Vector2.Zero,
+                                                            },
+                                                        }
                                                     },
                                                     modsContainer = new FillFlowContainer<Drawable>
                                                     {
@@ -491,7 +515,7 @@ namespace osu.Game.Screens.SelectV2
                 switch (s.NewValue)
                 {
                     case ScoringMode.Standardised:
-                        rightContent.Width = 170;
+                        rightContent.Width = 220;
                         break;
 
                     case ScoringMode.Classic:
@@ -521,6 +545,7 @@ namespace osu.Game.Screens.SelectV2
         {
             (BeatmapsetsStrings.ShowScoreboardHeadersCombo.ToUpper(), model.MaxCombo.ToString().Insert(model.MaxCombo.ToString().Length, "x")),
             (BeatmapsetsStrings.ShowScoreboardHeadersAccuracy.ToUpper(), model.DisplayAccuracy),
+            (BeatmapsetsStrings.ShowScoreboardHeadersMiss.ToUpper(), model.GetStatisticsForDisplay().First(s => s.Result == HitResult.Miss).Count.ToLocalisableString("N0")),
         };
 
         protected override bool OnHover(HoverEvent e)
