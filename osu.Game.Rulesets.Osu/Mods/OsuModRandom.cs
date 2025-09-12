@@ -257,10 +257,10 @@ namespace osu.Game.Rulesets.Osu.Mods
                 var beatLength = osuBeatmap.ControlPointInfo.TimingPointAt(positionInfos[i].HitObject.StartTime).BeatLength;
                 if(i+1 < positionInfos.Count && positionInfos[i].HitObject is HitObject circle && positionInfos[i+1].HitObject is HitObject nextCircle){
                     Logger.Log($"{nextCircle.StartTime - circle.StartTime}");
-                    Logger.Log($"beatLength");
-                    var isStream = nextCircle.StartTime - circle.StartTime < beatLength / Divisor.Value;
+                    // NOTE: The +1 feels hacky
+                    var isStream = nextCircle.StartTime - circle.StartTime + 1 < beatLength / Divisor.Value;
                     if(!isStream && i > 0 && positionInfos[i-1] != null && positionInfos[i-1].HitObject is HitObject previousCircle)
-                        return circle.StartTime - previousCircle.StartTime < beatLength / Divisor.Value;
+                        return circle.StartTime - previousCircle.StartTime + 1 < beatLength / Divisor.Value;
                 }
 
                 return true;
