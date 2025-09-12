@@ -78,10 +78,10 @@ namespace osu.Game.Rulesets.Osu.Mods
         };
 
         [SettingSource("Hard random", "Remove circle padding and unnecessary shifting")]
-        public Bindable<bool> Hardcore { get; } = new BindableBool(false);
+        public Bindable<bool> Hardcore { get; } = new BindableBool(true);
 
-        [SettingSource("Squarish angle", "Squareish angle")]
-        public Bindable<bool> Squareish { get; } = new BindableBool(false);
+        [SettingSource("Custom angle", "Custom angle")]
+        public Bindable<bool> CustomAngle { get; } = new BindableBool(false);
 
         public enum AngleEnum {
             Square,
@@ -109,10 +109,10 @@ namespace osu.Game.Rulesets.Osu.Mods
 
 
 
-        [SettingSource("Extend playarea", "Extend playarea")]
+        // [SettingSource("Extend playarea", "Extend playarea")]
         public Bindable<bool> ExtendPlayArea { get; } = new BindableBool(false);
 
-        [SettingSource("Infinite playarea", "Infinite playarea")]
+        // [SettingSource("Infinite playarea", "Infinite playarea")]
         public Bindable<bool> InfinitePlayArea { get; } = new BindableBool(false);
 
         [SettingSource("SquareMod", "SquareMod")]
@@ -170,7 +170,7 @@ namespace osu.Game.Rulesets.Osu.Mods
                 }
                 else
                 {
-                    // if(Squareish.Value)
+                    // if(CustomAngle.Value)
                     //     positionInfos[i].DistanceFromPrevious = SquareDistance.Value;
                     // else
                     if(PowerJumps.Value)
@@ -255,7 +255,7 @@ namespace osu.Game.Rulesets.Osu.Mods
             if(DivideByDivisor.Value) {
                 // Logger.Log($"Divisor {osuBeatmap.ControlPointInfo.GetClosestBeatDivisor(positionInfos.HitObject.StartTime)}");
                 var beatLength = osuBeatmap.ControlPointInfo.TimingPointAt(positionInfos[i].HitObject.StartTime).BeatLength;
-                if(i+1 < positionInfos.Count() && positionInfos[i].HitObject is HitObject circle && positionInfos[i+1].HitObject is HitObject nextCircle){
+                if(i+1 < positionInfos.Count && positionInfos[i].HitObject is HitObject circle && positionInfos[i+1].HitObject is HitObject nextCircle){
                     Logger.Log($"{nextCircle.StartTime - circle.StartTime}");
                     Logger.Log($"beatLength");
                     var isStream = nextCircle.StartTime - circle.StartTime < beatLength / Divisor.Value;
@@ -368,7 +368,7 @@ namespace osu.Game.Rulesets.Osu.Mods
             float relativeAngle = (float)Math.PI - angle;
             // Logger.Log($"relativeAngle {relativeAngle} angle {angle}");
 
-            if(Squareish.Value)
+            if(CustomAngle.Value)
                 relativeAngle = GetAngleValue();
 
             return flowDirection ? -relativeAngle : relativeAngle;
@@ -395,7 +395,7 @@ namespace osu.Game.Rulesets.Osu.Mods
 
             float relativeAngle = (float)Math.PI - angle;
 
-            if(Squareish.Value)
+            if(CustomAngle.Value)
                 relativeAngle = GetAngleValue();
 
             return flowDirection ? -relativeAngle : relativeAngle;
@@ -501,7 +501,7 @@ namespace osu.Game.Rulesets.Osu.Mods
             osuBeatmap.HitObjects = hitObjects;
 
             beatmap.Breaks.Clear();
-            Logger.Log($"Breaks: {beatmap.Breaks.Count()}");
+            Logger.Log($"Breaks: {beatmap.Breaks.Count}");
             Logger.Log($"TotalBreakTime: {beatmap.TotalBreakTime}ms" );
         }
     }
