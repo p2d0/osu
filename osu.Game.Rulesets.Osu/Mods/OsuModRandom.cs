@@ -35,7 +35,7 @@ namespace osu.Game.Rulesets.Osu.Mods
 
         public override Type[] IncompatibleMods => base.IncompatibleMods.Append(typeof(OsuModTargetPractice)).ToArray();
 
-        [SettingSource("Angle sharpness", "How sharp angles should be")]
+        [SettingSource("Angle sharpness", "How sharp angles should be", IsHidden = nameof(CustomAngle))]
         public BindableFloat AngleSharpness { get; } = new BindableFloat(7)
         {
             MinValue = 1,
@@ -43,42 +43,13 @@ namespace osu.Game.Rulesets.Osu.Mods
             Precision = 0.1f
         };
 
-        [SettingSource("Stream Angle sharpness", "How sharp angles should be")]
+        [SettingSource("Stream Angle sharpness", "How sharp angles should be", IsHidden = nameof(CustomAngle))]
         public BindableFloat StreamAngleSharpness { get; } = new BindableFloat(7)
         {
             MinValue = 1,
             MaxValue = 10,
             Precision = 0.1f
         };
-
-        [SettingSource("Aim Distance Multiplier", "How much bigger the distance")]
-        public BindableFloat AimDistanceMultiplier { get; } = new BindableFloat(1)
-        {
-            MinValue = 0.5f,
-            MaxValue = 10,
-            Precision = 0.01f
-        };
-
-        [SettingSource("Stream Distance Multiplier", "How much bigger the distance")]
-        public BindableFloat StreamDistanceMultiplier { get; } = new BindableFloat(1)
-        {
-            MinValue = 0.1f,
-            MaxValue = 50,
-            Precision = 0.1f
-        };
-
-        [SettingSource("Divide by divisor", "Divide distances by divisor")]
-        public Bindable<bool> DivideByDivisor { get; } = new BindableBool(false);
-
-        [SettingSource("Stream Distance", "How much bigger the distance")]
-        public BindableInt StreamDistance { get; } = new BindableInt(100)
-        {
-            MinValue = 25,
-            MaxValue = 500,
-        };
-
-        [SettingSource("Hard random", "Remove circle padding and unnecessary shifting")]
-        public Bindable<bool> Hardcore { get; } = new BindableBool(true);
 
         [SettingSource("Custom angle", "Custom angle")]
         public Bindable<bool> CustomAngle { get; } = new BindableBool(false);
@@ -101,11 +72,56 @@ namespace osu.Game.Rulesets.Osu.Mods
             { AngleEnum.FourtyFive, 0.785398f } // 45 degrees in radians
         };
 
-        [SettingSource("Angle", "Angle selector")]
+        [SettingSource("Angle", "Angle selector", IsVisible = nameof(CustomAngle))]
         public Bindable<AngleEnum> Angle { get; } = new Bindable<AngleEnum>
         {
             Default = AngleEnum.Square,
         };
+
+
+        [SettingSource("Aim Distance Multiplier", "How much bigger the distance")]
+        public BindableFloat AimDistanceMultiplier { get; } = new BindableFloat(1)
+        {
+            MinValue = 0.5f,
+            MaxValue = 10,
+            Precision = 0.01f
+        };
+
+        [SettingSource("Power jumps", "Longer jumps get a smaller increase in distance")]
+        public BindableBool PowerJumps { get; } = new BindableBool(false);
+
+        [SettingSource("Stream Distance Multiplier", "How much bigger the distance")]
+        public BindableFloat StreamDistanceMultiplier { get; } = new BindableFloat(1)
+        {
+            MinValue = 0.1f,
+            MaxValue = 50,
+            Precision = 0.1f
+        };
+
+        [SettingSource("Exponential streams", "Larger stream spacing receives diminishing distance increases")]
+        public BindableBool PowerStreams { get; } = new BindableBool(false);
+
+        [SettingSource("Divide by divisor", "Divide distances by divisor")]
+        public Bindable<bool> DivideByDivisor { get; } = new BindableBool(false);
+
+        [SettingSource("Divisor", "Divisor selector", IsVisible = nameof(DivideByDivisor))]
+        public BindableInt Divisor { get; } = new BindableInt(2)
+            {
+                MinValue = 1,
+                MaxValue = 16,
+                Default = 2,
+            };
+
+        [SettingSource("Stream Distance", "How much bigger the distance", IsHidden = nameof(DivideByDivisor))]
+        public BindableInt StreamDistance { get; } = new BindableInt(100)
+        {
+            MinValue = 25,
+            MaxValue = 500,
+        };
+
+        [SettingSource("Hard random", "Remove circle padding and unnecessary shifting")]
+        public Bindable<bool> Hardcore { get; } = new BindableBool(true);
+
 
 
 
@@ -115,22 +131,10 @@ namespace osu.Game.Rulesets.Osu.Mods
         // [SettingSource("Infinite playarea", "Infinite playarea")]
         public Bindable<bool> InfinitePlayArea { get; } = new BindableBool(false);
 
-        [SettingSource("SquareMod", "SquareMod")]
+        // [SettingSource("SquareMod", "SquareMod")]
         public Bindable<bool> SquareMod { get; } = new BindableBool(false);
 
-        [SettingSource("Divisor", "Divisor selector")]
-        public BindableInt Divisor { get; } = new BindableInt(2)
-        {
-            MinValue = 1,
-            MaxValue = 16,
-            Default = 2,
-        };
 
-        [SettingSource("Longer jumps get a smaller increase in distance", "Longer jumps get a smaller increase in distance")]
-        public BindableBool PowerJumps { get; } = new BindableBool(false);
-
-        [SettingSource("Bigger Distance between 'streams' get much smaller increase in distance", "Bigger Distance between 'streams' get much smaller increase in distance")]
-        public BindableBool PowerStreams { get; } = new BindableBool(false);
 
 
         // [SettingSource("Square Distance", "Square distance")]
