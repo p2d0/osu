@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using NUnit.Framework;
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Input;
@@ -12,10 +13,12 @@ using osu.Framework.Testing;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Mods;
+using osu.Game.Overlays.Settings;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Osu.Mods;
 using osuTK;
 using osuTK.Input;
+using Logger = osu.Framework.Logging.Logger;
 
 namespace osu.Game.Tests.Visual.UserInterface
 {
@@ -78,6 +81,65 @@ namespace osu.Game.Tests.Visual.UserInterface
                 SelectedMods.Value = Array.Empty<Mod>();
                 panel.Enabled.Value = false;
                 panel.ExpandedState.Value = ModCustomisationPanel.ModCustomisationPanelState.Collapsed;
+            });
+        }
+
+        [Test]
+        public void TestConditionalShowing()
+        {
+            AddStep("set RD", () =>
+            {
+                SelectedMods.Value = new[] { new OsuModRandom() };
+                panel.Enabled.Value = true;
+                panel.ExpandedState.Value = ModCustomisationPanel.ModCustomisationPanelState.ExpandedByMod;
+            });
+            checkVisible(true);
+            AddStep("Toggle Divide by Divisor", () =>
+            {
+                var mod = (OsuModRandom)SelectedMods.Value.OfType<OsuModRandom>().First();
+                mod.DivideByDivisor.Value = !mod.DivideByDivisor.Value;
+            });
+            checkVisible(false);
+            AddStep("set empty", () =>
+            {
+                SelectedMods.Value = Array.Empty<Mod>();
+                panel.Enabled.Value = false;
+                panel.ExpandedState.Value = ModCustomisationPanel.ModCustomisationPanelState.Collapsed;
+            });
+        }
+
+        [Test]
+        public void TestConditionalHiding()
+        {
+            AddStep("set RD", () =>
+            {
+                SelectedMods.Value = new[] { new OsuModRandom() };
+                panel.Enabled.Value = true;
+                panel.ExpandedState.Value = ModCustomisationPanel.ModCustomisationPanelState.ExpandedByMod;
+            });
+            checkVisible(false);
+            AddStep("Toggle Divide by Divisor", () =>
+            {
+                var mod = (OsuModRandom)SelectedMods.Value.OfType<OsuModRandom>().First();
+                mod.DivideByDivisor.Value = !mod.DivideByDivisor.Value;
+            });
+            checkVisible(true);
+            AddStep("set empty", () =>
+            {
+                SelectedMods.Value = Array.Empty<Mod>();
+                panel.Enabled.Value = false;
+                panel.ExpandedState.Value = ModCustomisationPanel.ModCustomisationPanelState.Collapsed;
+            });
+        }
+
+        private void checkVisible(bool visible)
+        {
+            AddUntilStep(visible ? "Visible" : "Not visible", () =>
+            {
+                var visibility = panel.ChildrenOfType<ModCustomisationSection>().First()
+                    .ChildrenOfType<SettingsItem<int>>()
+                    .Any(c => c.Alpha == (visible ? 1 : 0)); // quick check for fully visible or invisible.
+                return visibility;
             });
         }
 
