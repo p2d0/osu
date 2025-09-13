@@ -129,6 +129,9 @@ namespace osu.Game.Rulesets.Osu.Mods
         [SettingSource("Longer jumps get a smaller increase in distance", "Longer jumps get a smaller increase in distance")]
         public BindableBool PowerJumps { get; } = new BindableBool(false);
 
+        [SettingSource("Bigger Distance between 'streams' get much smaller increase in distance", "Bigger Distance between 'streams' get much smaller increase in distance")]
+        public BindableBool PowerStreams { get; } = new BindableBool(false);
+
 
         // [SettingSource("Square Distance", "Square distance")]
         // public BindableInt SquareDistance { get; } = new BindableInt(200)
@@ -166,7 +169,42 @@ namespace osu.Game.Rulesets.Osu.Mods
                 originalDistance = positionInfos[i].DistanceFromPrevious;
                 if (isStream(osuBeatmap, positionInfos,i, originalDistance))
                 {
-                    positionInfos[i].DistanceFromPrevious *= StreamDistanceMultiplier.Value;
+                    if(PowerStreams.Value){
+                        float distance = positionInfos[i].DistanceFromPrevious;
+                        float M = StreamDistanceMultiplier.Value;
+
+                        // --- TUNABLE PARAMETERS ---
+
+                        // 1. How much to amplify the base multiplier at zero distance.
+                        // A value of 2.5 means the initial bonus is 2.5 times the base bonus.
+                        // Based on your example, 2.65 is a great starting point.
+                        float bonusAmplifier = 2.65f;
+
+                        // 2. How quickly the bonus effect decays with distance.
+                        // A larger value means a faster drop-off.
+                        // Based on your example, 0.023 is a great starting point.
+                        float decayRate = 0.023f;
+
+                        // --------------------------
+
+
+                        // Step 1: Calculate the maximum possible bonus (at distance = 0)
+                        // We use (M - 1) because a multiplier of M=10 is a "bonus" of 9.
+                        float maxBonus = (M - 1f) * bonusAmplifier;
+
+                        // Step 2: Calculate the decay factor based on distance
+                        // MathF.Exp() is the e^x function. The negative sign makes it decay.
+                        float decayFactor = MathF.Exp(-decayRate * distance);
+
+                        // Step 3: Calculate the actual bonus for this distance
+                        float currentBonus = maxBonus * decayFactor;
+
+                        // Step 4: Apply the final multiplier
+                        // The final multiplier is 1.0 (no change) plus the current bonus.
+                        positionInfos[i].DistanceFromPrevious *= (1f + currentBonus);
+                    }
+                    else
+                        positionInfos[i].DistanceFromPrevious *= StreamDistanceMultiplier.Value;
                 }
                 else
                 {
