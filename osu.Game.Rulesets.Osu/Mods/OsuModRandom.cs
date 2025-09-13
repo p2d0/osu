@@ -101,7 +101,7 @@ namespace osu.Game.Rulesets.Osu.Mods
         [SettingSource("Exponential streams", "Larger stream spacing receives diminishing distance increases")]
         public BindableBool PowerStreams { get; } = new BindableBool(false);
 
-        [SettingSource("Divide by divisor", "Divide distances by divisor")]
+        [SettingSource("Divide by divisor", "Use the beat divisor to distinguish streams/jumps")]
         public Bindable<bool> DivideByDivisor { get; } = new BindableBool(false);
 
         [SettingSource("Divisor", "Divisor selector", IsVisible = nameof(DivideByDivisor))]
