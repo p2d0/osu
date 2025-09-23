@@ -22,6 +22,7 @@ using osu.Game.Overlays;
 using osu.Game.Overlays.Notifications;
 using osu.Game.Performance;
 using osu.Game.Rulesets;
+using osu.Game.Rulesets.Difficulty;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Scoring;
 using osu.Game.Scoring.Legacy;
@@ -72,6 +73,9 @@ namespace osu.Game.Database
 
         [Resolved]
         private OsuConfigManager config { get; set; } = null!;
+
+        [Resolved]
+        private BeatmapDifficultyCache difficultyCache { get; set; } = null!;
 
         private LocalCachedBeatmapMetadataSource localMetadataSource = null!;
 
@@ -280,10 +284,16 @@ namespace osu.Game.Database
 
                     Debug.Assert(ruleset != null);
 
-                    var calculator = ruleset.CreateDifficultyCalculator(working);
                     var performanceCalculator = ruleset.CreatePerformanceCalculator();
+                    var starsTask = difficultyCache.GetDifficultyAsync(score.BeatmapInfo!, score.Ruleset, score.Mods).GetResultSafely();
+                    DifficultyAttributes difficulty;
+                    if(starsTask is not StarDifficulty stars || stars.DifficultyAttributes is null){
+                        var calculator = ruleset.CreateDifficultyCalculator(working);
+                        difficulty = calculator.Calculate();
+                    } else {
+                        difficulty = stars.DifficultyAttributes;
+                    }
 
-                    var difficulty = calculator.Calculate();
                     double pp = performanceCalculator.Calculate(score, difficulty).Total;
                     realmAccess.Write(r =>
                     {

@@ -86,7 +86,7 @@ namespace osu.Game.Overlays.Profile.Sections.Ranks
                                         Spacing = new Vector2(0, 2),
                                         Children = new Drawable[]
                                         {
-                                            new ScoreBeatmapMetadataContainer(Score.BeatmapInfo),
+                                            new ScoreBeatmapMetadataContainer(Score),
                                             new FillFlowContainer
                                             {
                                                 AutoSizeAxes = Axes.Both,
@@ -257,9 +257,27 @@ namespace osu.Game.Overlays.Profile.Sections.Ranks
 
         private partial class ScoreBeatmapMetadataContainer : BeatmapMetadataContainer
         {
-            public ScoreBeatmapMetadataContainer(IBeatmapInfo beatmapInfo)
-                : base(beatmapInfo)
+            IScoreInfo ScoreInfo;
+
+            public ScoreBeatmapMetadataContainer(IScoreInfo scoreInfo)
+                : base(scoreInfo.Beatmap)
             {
+                ScoreInfo = scoreInfo;
+            }
+
+            [BackgroundDependencyLoader]
+            private void load(OsuGame? game)
+            {
+                Action = () =>
+                {
+                    game?.PresentBeatmap(ScoreInfo.Beatmap.BeatmapSet, s => ScoreInfo.Beatmap.Equals(s));
+                };
+
+                Child = new FillFlowContainer
+                {
+                    AutoSizeAxes = Axes.Both,
+                    Children = CreateText(ScoreInfo.Beatmap),
+                };
             }
 
             protected override Drawable[] CreateText(IBeatmapInfo beatmapInfo)

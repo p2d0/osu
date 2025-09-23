@@ -15,11 +15,13 @@ using osu.Game.Beatmaps;
 using osu.Game.Configuration;
 using osu.Game.Database;
 using osu.Game.IO.Archives;
+using osu.Game.Models;
 using osu.Game.Online.API;
 using osu.Game.Overlays.Notifications;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Scoring.Legacy;
+using Realms;
 
 namespace osu.Game.Scoring
 {
@@ -94,9 +96,16 @@ namespace osu.Game.Scoring
             return Realm.Run(r => r.All<ScoreInfo>().Where(query).ToList().Detach());
         }
 
+        public List<ScoreInfo> ByUsername(string username)
+        {
+            return Realm.Run(r => r.All<ScoreInfo>().Filter("RealmUser.Username == $0 && PP != null && RankInt != -1 SORT(PP DESC) DISTINCT(BeatmapInfo.ID,BeatmapInfo.DifficultyName)", username)
+                             .ToList().Detach());
+        }
+
         public List<ScoreInfo> All()
         {
-            return Realm.Run(r => r.All<ScoreInfo>().ToList().Detach());
+            return Realm.Run(r => r.All<ScoreInfo>().Filter("PP != null && RankInt != -1 && ANY Files.Filename == 'replay.osr'  SORT(PP DESC) DISTINCT(BeatmapInfo.ID,BeatmapInfo.DifficultyName)")
+                             .ToList().Detach());
         }
 
         private ScoreInfo? getDatabasedScoreInfo(IScoreInfo originalScoreInfo)

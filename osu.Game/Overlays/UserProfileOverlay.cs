@@ -32,6 +32,7 @@ using osu.Game.Users;
 using osuTK;
 using osuTK.Graphics;
 using osu.Framework.Logging;
+using System.Threading.Tasks;
 
 namespace osu.Game.Overlays
 {
@@ -47,6 +48,9 @@ namespace osu.Game.Overlays
         private GetUserRequest? userReq;
         private ProfileSectionsContainer? sectionsContainer;
         private ProfileSectionTabControl? tabs;
+
+        [Resolved]
+        private ScoreManager ScoreManager { get; set; } = null!;
 
         private IUser? user;
         private IRulesetInfo? ruleset;
@@ -100,53 +104,90 @@ namespace osu.Game.Overlays
             Scheduler.AddOnce(fetchAndSetContent);
         }
 
-        public void ShowLocalUser(APIUser user, List<ScoreInfo> scores)
+        public void ShowLocalUser(APIUser user)
         {
             this.user = user;
             ruleset = null;
             Show();
             Logger.Log($"Showingthe window");
             loadingLayer.Show();
-            Scheduler.AddOnce(() => fetchAndSetContentForLocalUser(user, scores));
+            Scheduler.AddOnce(() => fetchAndSetContentForLocalUser(user));
         }
 
-        private void fetchAndSetContentForLocalUser(APIUser user, List<ScoreInfo> scores)
+        private async void fetchAndSetContentForLocalUser(APIUser user)
         {
-            if (sectionsContainer != null){
+            if (sectionsContainer != null)
+            {
                 sectionsContainer.ExpandableHeader = null;
-
-                Logger.Log($"Sections conainer is null");
             }
-
-            Logger.Log($"Fetching");
 
             userReq?.Cancel();
             lastSection = null;
 
-            sections = new ProfileSection[] {
-                new AboutSection(),
-                new LocalRanksSection(scores) };
 
-            int profileHue = OverlayColourScheme.Pink.GetHue();
-
-            changeOverlayColours(profileHue);
+            // int profileHue = OverlayColourScheme.Pink.GetHue();
+            // changeOverlayColours(profileHue);
             recreateBaseContent();
 
-            Debug.Assert(sections != null && sectionsContainer != null && tabs != null);
+            Debug.Assert(sectionsContainer != null && tabs != null);
 
-            var userProfileData = new UserProfileData(user, rulesets.GetRuleset(0));
-            Header.User.Value = userProfileData;
-
-            Logger.Log($"Sections: {sections.Length}");
-            foreach (var sec in sections)
+            try
             {
-                sec.User.Value = userProfileData;
-                sectionsContainer.Add(sec);
-                tabs.AddItem(sec);
-            }
+                loadingLayer.Show();
 
-            loadingLayer.Hide();
+                // Run heavy work in background
+                var (scores, userProfileData) = await Task.Run(() =>
+                {
+                    var scores = user.Username == "Guest" ? ScoreManager.All() : ScoreManager.ByUsername(user.Username);
+                    double totalPP = 0;
+                    double weight = 1;
+
+                    foreach (var score in scores.Take(100))
+                    {
+                        totalPP += score.PP.Value * weight;
+                        weight *= 0.95;
+                    }
+
+                    var userWithStats = new APIUser
+                    {
+                        Id = user.Id,
+                        Username = user.Username,
+                        CountryCode = user.CountryCode,
+                        CoverUrl = user.CoverUrl,
+                        Statistics = new UserStatistics
+                        {
+                            IsRanked = true,
+                            PP = (decimal)totalPP,
+                            Accuracy = scores.Any() ? scores.Average(s => s.Accuracy) : 1,
+                            PlayCount = scores.Count,
+                        }
+                    };
+
+                    return (scores.Take(100).ToList(), new UserProfileData(userWithStats, rulesets.GetRuleset(0)));
+                });
+
+                // This runs on main thread automatically
+                var localRanks = new LocalRanksSection(scores);
+                sections = new ProfileSection[] { localRanks };
+                Header.User.Value = userProfileData;
+
+                foreach (var sec in sections)
+                {
+                    sec.User.Value = userProfileData;
+                    sectionsContainer.Add(sec);
+                    tabs.AddItem(sec);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed to load local user data");
+            }
+            finally
+            {
+                loadingLayer.Hide();
+            }
         }
+
 
         private void fetchAndSetContent()
         {
