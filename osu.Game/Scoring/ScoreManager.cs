@@ -84,6 +84,21 @@ namespace osu.Game.Scoring
             return Realm.Run(r => r.All<ScoreInfo>().FirstOrDefault(query)?.Detach());
         }
 
+        /// <summary>
+        /// Perform a lookup query on available <see cref="ScoreInfo"/>s.
+        /// </summary>
+        /// <param name="query">The query.</param>
+        /// <returns>The results for the provided query in their detached form.</returns>
+        public List<ScoreInfo> QueryScores(Expression<Func<ScoreInfo, bool>> query)
+        {
+            return Realm.Run(r => r.All<ScoreInfo>().Where(query).ToList().Detach());
+        }
+
+        public List<ScoreInfo> All()
+        {
+            return Realm.Run(r => r.All<ScoreInfo>().ToList().Detach());
+        }
+
         private ScoreInfo? getDatabasedScoreInfo(IScoreInfo originalScoreInfo)
         {
             ScoreInfo? databasedScoreInfo = null;

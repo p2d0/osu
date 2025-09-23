@@ -1,7 +1,8 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using osu.Framework.Allocation;
@@ -26,17 +27,19 @@ using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Overlays.Profile;
 using osu.Game.Overlays.Profile.Sections;
 using osu.Game.Rulesets;
+using osu.Game.Scoring;
 using osu.Game.Users;
 using osuTK;
 using osuTK.Graphics;
+using osu.Framework.Logging;
 
 namespace osu.Game.Overlays
 {
     public partial class UserProfileOverlay : FullscreenOverlay<ProfileHeader>
     {
-        protected override Container<Drawable> Content => onlineViewContainer;
+        // protected override Container<Drawable> Content => onlineViewContainer;
 
-        private readonly OnlineViewContainer onlineViewContainer;
+        // private readonly OnlineViewContainer onlineViewContainer;
         private readonly LoadingLayer loadingLayer;
 
         private ProfileSection? lastSection;
@@ -61,10 +64,10 @@ namespace osu.Game.Overlays
                 RelativeSizeAxes = Axes.Both,
                 Children = new Drawable[]
                 {
-                    onlineViewContainer = new OnlineViewContainer($"Sign in to view the {Header.Title.Title}")
-                    {
-                        RelativeSizeAxes = Axes.Both
-                    },
+                    // onlineViewContainer = new OnlineViewContainer($"Sign in to view the {Header.Title.Title}")
+                    // {
+                    //     RelativeSizeAxes = Axes.Both
+                    // },
                     loadingLayer = new LoadingLayer(true)
                 }
             });
@@ -87,8 +90,8 @@ namespace osu.Game.Overlays
 
         public void ShowUser(IUser userToShow, IRulesetInfo? userRuleset = null)
         {
-            if (userToShow.OnlineID == APIUser.SYSTEM_USER_ID)
-                return;
+            // if (userToShow.OnlineID == APIUser.SYSTEM_USER_ID)
+            //     return;
 
             user = userToShow;
             ruleset = userRuleset;
@@ -97,13 +100,61 @@ namespace osu.Game.Overlays
             Scheduler.AddOnce(fetchAndSetContent);
         }
 
+        public void ShowLocalUser(APIUser user, List<ScoreInfo> scores)
+        {
+            this.user = user;
+            ruleset = null;
+            Show();
+            Logger.Log($"Showingthe window");
+            loadingLayer.Show();
+            Scheduler.AddOnce(() => fetchAndSetContentForLocalUser(user, scores));
+        }
+
+        private void fetchAndSetContentForLocalUser(APIUser user, List<ScoreInfo> scores)
+        {
+            if (sectionsContainer != null){
+                sectionsContainer.ExpandableHeader = null;
+
+                Logger.Log($"Sections conainer is null");
+            }
+
+            Logger.Log($"Fetching");
+
+            userReq?.Cancel();
+            lastSection = null;
+
+            sections = new ProfileSection[] {
+                new AboutSection(),
+                new LocalRanksSection(scores) };
+
+            int profileHue = OverlayColourScheme.Pink.GetHue();
+
+            changeOverlayColours(profileHue);
+            recreateBaseContent();
+
+            Debug.Assert(sections != null && sectionsContainer != null && tabs != null);
+
+            var userProfileData = new UserProfileData(user, rulesets.GetRuleset(0));
+            Header.User.Value = userProfileData;
+
+            Logger.Log($"Sections: {sections.Length}");
+            foreach (var sec in sections)
+            {
+                sec.User.Value = userProfileData;
+                sectionsContainer.Add(sec);
+                tabs.AddItem(sec);
+            }
+
+            loadingLayer.Hide();
+        }
+
         private void fetchAndSetContent()
         {
             Debug.Assert(user != null);
 
-            bool sameUser = user.OnlineID == Header.User.Value?.User.Id;
-            if (sameUser && ruleset?.MatchesOnlineID(Header.User.Value?.Ruleset) == true)
-                return;
+            // bool sameUser = user.OnlineID == Header.User.Value?.User.Id;
+            // if (sameUser && ruleset?.MatchesOnlineID(Header.User.Value?.Ruleset) == true)
+            //     return;
 
             if (sectionsContainer != null)
                 sectionsContainer.ExpandableHeader = null;
@@ -114,18 +165,18 @@ namespace osu.Game.Overlays
             sections = !user.IsBot
                 ? new ProfileSection[]
                 {
-                    //new AboutSection(),
-                    new RecentSection(),
+                    new AboutSection(),
+                    // new RecentSection(),
                     new RanksSection(),
                     //new MedalsSection(),
-                    new HistoricalSection(),
-                    new BeatmapsSection(),
-                    new KudosuSection()
+                    // new HistoricalSection(),
+                    // new BeatmapsSection(),
+                    // new KudosuSection()
                 }
                 : Array.Empty<ProfileSection>();
 
-            if (!sameUser)
-                changeOverlayColours(OverlayColourScheme.Pink.GetHue());
+            // if (!sameUser)
+            //     changeOverlayColours(OverlayColourScheme.Pink.GetHue());
 
             recreateBaseContent();
 

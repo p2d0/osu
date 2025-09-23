@@ -22,6 +22,7 @@ using osu.Game.Overlays;
 using osu.Game.Overlays.Notifications;
 using osu.Game.Performance;
 using osu.Game.Rulesets;
+using osu.Game.Rulesets.Mods;
 using osu.Game.Scoring;
 using osu.Game.Scoring.Legacy;
 using osu.Game.Screens.Play;
@@ -88,13 +89,14 @@ namespace osu.Game.Database
 
                 clearOutdatedStarRatings();
                 populateMissingStarRatings();
+                populateMissingPPValues();
                 processOnlineBeatmapSetsWithNoUpdate();
                 // Note that the previous method will also update these on a fresh run.
                 processBeatmapsWithMissingObjectCounts();
                 processScoresWithMissingStatistics();
                 convertLegacyTotalScoreToStandardised();
                 upgradeScoreRanks();
-                backpopulateMissingSubmissionAndRankDates();
+                // backpopulateMissingSubmissionAndRankDates();
                 backpopulateUserTags();
             }, TaskCreationOptions.LongRunning).ContinueWith(t =>
             {
@@ -221,6 +223,84 @@ namespace osu.Game.Database
             }
 
             completeNotification(notification, processedCount, beatmapIds.Count, failedCount);
+        }
+
+        private void populateMissingPPValues()
+        {
+            HashSet<Guid> scoreIds = new HashSet<Guid>();
+
+            Logger.Log("Querying for scores with missing pp values...");
+
+            realmAccess.Run(r =>
+            {
+                foreach (var s in r.All<ScoreInfo>().Where(s => s.PP == null))
+                    scoreIds.Add(s.ID);
+            });
+
+            if (scoreIds.Count == 0)
+                return;
+
+            Logger.Log($"Found {scoreIds.Count} scores which require pp reprocessing.");
+
+            var notification = showProgressNotification(scoreIds.Count, "Reprocessing", "score' pp have been updated");
+
+            int processedCount = 0;
+            int failedCount = 0;
+
+            Dictionary<string, Ruleset> rulesetCache = new Dictionary<string, Ruleset>();
+
+            Ruleset getRuleset(RulesetInfo rulesetInfo)
+            {
+                if (!rulesetCache.TryGetValue(rulesetInfo.ShortName, out var ruleset))
+                    ruleset = rulesetCache[rulesetInfo.ShortName] = rulesetInfo.CreateInstance();
+
+                return ruleset;
+            }
+
+            foreach (Guid id in scoreIds)
+            {
+                if (notification?.State == ProgressNotificationState.Cancelled)
+                    break;
+
+                updateNotificationProgress(notification, processedCount, scoreIds.Count);
+
+                sleepIfRequired();
+
+                var score = realmAccess.Run(r => r.Find<ScoreInfo>(id)?.Detach());
+
+                if (score == null)
+                    return;
+
+                try
+                {
+                    var working = beatmapManager.GetWorkingBeatmap(score.BeatmapInfo);
+                    if(working is DummyWorkingBeatmap)
+                        continue;
+                    var ruleset = getRuleset(working.BeatmapInfo.Ruleset);
+
+                    Debug.Assert(ruleset != null);
+
+                    var calculator = ruleset.CreateDifficultyCalculator(working);
+                    var performanceCalculator = ruleset.CreatePerformanceCalculator();
+
+                    var difficulty = calculator.Calculate();
+                    double pp = performanceCalculator.Calculate(score, difficulty).Total;
+                    realmAccess.Write(r =>
+                    {
+                        if (r.Find<ScoreInfo>(id) is ScoreInfo liveScoreInfo){
+                            liveScoreInfo.PP = pp;
+                        }
+                    });
+                    ++processedCount;
+                }
+                catch (Exception e)
+                {
+                    Logger.Log($"Background processing failed on {score}: {e}");
+                    ++failedCount;
+                }
+            }
+
+            completeNotification(notification, processedCount, scoreIds.Count, failedCount);
         }
 
         private void processOnlineBeatmapSetsWithNoUpdate()
