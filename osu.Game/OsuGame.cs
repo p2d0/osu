@@ -59,6 +59,7 @@ using osu.Game.Overlays.SkinEditor;
 using osu.Game.Overlays.Toolbar;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Scoring;
+using osu.Game.Utils;
 using osu.Game.Scoring.Legacy;
 using osu.Game.Screens;
 using osu.Game.Screens.Edit;
@@ -76,7 +77,8 @@ using osu.Game.Seasonal;
 using osu.Game.Skinning;
 using osu.Game.Updater;
 using osu.Game.Users;
-using osu.Game.Utils;
+using osu.Game.Scoring;
+using osu.Game.Online.API.Requests.Responses;
 using osuTK;
 using osuTK.Graphics;
 using Sentry;
@@ -1579,11 +1581,55 @@ namespace osu.Game
                     return true;
 
                 case GlobalAction.ToggleProfile:
-                    if (userProfile.State.Value == Visibility.Visible)
-                        userProfile.Hide();
-                    else
-                        ShowUser(API.LocalUser.Value);
-                    return true;
+                    {
+                        if (userProfile.State.Value == Visibility.Visible)
+                        {
+                            userProfile.Hide();
+                            return true;
+                        }
+
+                        var user = API.LocalUser.Value;
+                        if (user.Id == APIUser.SYSTEM_USER_ID)
+                        {
+                            Logger.Log($"Toggling user profile for user KAKAKA {user}");
+                            var scores = ScoreManager.QueryScores(s => s.PP != null)
+                                .OrderByDescending(s => s.PP.Value)
+                                .ToList();
+                            double totalPP = 0;
+                            double weight = 1;
+
+                            foreach (var score in scores)
+                            {
+                                if(score.PP.HasValue){ 
+                                    totalPP += score.PP.Value * weight;
+                                    weight *= 0.95;
+                                }
+                            }
+
+                            var userWithStats = new APIUser
+                            {
+                                Id = user.Id,
+                                Username = user.Username,
+                                CountryCode = user.CountryCode,
+                                CoverUrl = user.CoverUrl,
+                                Statistics = new UserStatistics
+                                {
+                                    IsRanked = true,
+                                    PP = (decimal)totalPP,
+                                    Accuracy = scores.Any() ? scores.Average(s => s.Accuracy) : 1,
+                                    PlayCount = scores.Count,
+                                }
+                            };
+                            userProfile.ShowLocalUser(userWithStats, scores);
+                            // Schedule(() => ShowUser(userWithStats));
+                        }
+                        else
+                        {
+                            ShowUser(user);
+                        }
+
+                        return true;
+                    }
 
                 case GlobalAction.RandomSkin:
                     // Don't allow random skin selection while in the skin editor.
