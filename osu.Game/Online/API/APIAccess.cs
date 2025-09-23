@@ -16,6 +16,7 @@ using Newtonsoft.Json.Linq;
 using osu.Framework.Bindables;
 using osu.Framework.Development;
 using osu.Framework.Extensions.ExceptionExtensions;
+using osu.Framework.Extensions.IEnumerableExtensions;
 using osu.Framework.Extensions.ObjectExtensions;
 using osu.Framework.Graphics;
 using osu.Framework.Logging;
@@ -168,6 +169,7 @@ namespace osu.Game.Online.API
         /// </summary>
         private void run()
         {
+            log.Add("RUNNIN LOG");
             while (!cancellationToken.IsCancellationRequested)
             {
                 if (state.Value == APIState.Failing)
@@ -177,6 +179,10 @@ namespace osu.Game.Online.API
                     log.Add($@"{nameof(APIAccess)} is in a failing state, waiting a bit before we try again...");
                     Thread.Sleep(5000);
                 }
+                // if(ProvidedUsername != localUser.Value.Username){
+                //     log.Add("SETTING LOCAL USER");
+                //     Scheduler.Add(setLocalUser, false);
+                // }
 
                 // Ensure that we have valid credentials.
                 // If not, setting the offline state will allow the game to prompt the user to provide new credentials.
@@ -246,8 +252,9 @@ namespace osu.Game.Online.API
         /// <returns>Whether the connection attempt was successful.</returns>
         private void attemptConnect()
         {
-            if (localUser.IsDefault)
+            if (localUser.IsDefault){
                 Scheduler.Add(setPlaceholderLocalUser, false);
+            }
 
             // save the username at this point, if the user requested for it to be.
             config.SetValue(OsuSetting.Username, config.Get<bool>(OsuSetting.SaveUsername) ? ProvidedUsername : string.Empty);
@@ -376,6 +383,22 @@ namespace osu.Game.Online.API
                 IsSupporter = configSupporter.Value,
             };
         }
+
+        public void setLocalUser(string username)
+        {
+            localUser.Value = new GuestUser
+            {
+                Username = username,
+            };
+            localUser.TriggerChange();
+        }
+
+        // public void setLocalUsername(string username)
+        // {
+        //     ProvidedUsername = username;
+        // }
+
+
 
         public void Perform(APIRequest request)
         {
@@ -611,6 +634,7 @@ namespace osu.Game.Online.API
             // Scheduled prior to state change such that the state changed event is invoked with the correct user and their friends present
             Schedule(() =>
             {
+                log.Add("Running Logout");
                 localUser.Value = createGuestUser();
                 configSupporter.Value = false;
                 friends.Clear();

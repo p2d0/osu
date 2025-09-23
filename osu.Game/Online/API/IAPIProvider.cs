@@ -18,6 +18,7 @@ namespace osu.Game.Online.API
         /// </summary>
         IBindable<APIUser> LocalUser { get; }
 
+
         /// <summary>
         /// The user's friends.
         /// </summary>
@@ -106,6 +107,9 @@ namespace osu.Game.Online.API
         /// <param name="username">The user's username.</param>
         /// <param name="password">The user's password.</param>
         void Login(string username, string password);
+
+        void setLocalUser(string username);
+        // void setLocalUsername(string username);
 
         /// <summary>
         /// Provide a second-factor authentication code for authentication.

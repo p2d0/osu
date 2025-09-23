@@ -104,6 +104,12 @@ namespace osu.Game.Online.API
             return Task.CompletedTask;
         }
 
+        // public void setLocalUsername(string username){
+            // }
+        public void setLocalUser(string username){
+
+        }
+
         public void Login(string username, string password)
         {
             state.Value = APIState.Connecting;
