@@ -44,6 +44,9 @@ namespace osu.Game.Screens.Play
         [Resolved]
         private SessionStatics statics { get; set; }
 
+        [Resolved]
+        private BeatmapDifficultyCache difficultyCache { get; set; }
+
         [Resolved(canBeNull: true)]
         [CanBeNull]
         private UserStatisticsWatcher userStatisticsWatcher { get; set; }
@@ -208,11 +211,28 @@ namespace osu.Game.Screens.Play
         {
             await base.PrepareScoreForResultsAsync(score).ConfigureAwait(false);
 
+            score.ScoreInfo.PP = await calculatePP(score.ScoreInfo).ConfigureAwait(false);
+
             score.ScoreInfo.Date = DateTimeOffset.Now;
 
             await submitScore(score).ConfigureAwait(false);
             spectatorClient.EndPlaying(GameplayState);
             userStatisticsWatcher?.RegisterForStatisticsUpdateAfter(score.ScoreInfo);
+        }
+
+        private async Task<double?> calculatePP(ScoreInfo scoreInfo){
+                var attributes = await difficultyCache.GetDifficultyAsync(scoreInfo.BeatmapInfo!, scoreInfo.Ruleset, scoreInfo.Mods).ConfigureAwait(false);
+                var performanceCalculator = scoreInfo.Ruleset.CreateInstance().CreatePerformanceCalculator();
+
+                // Performance calculation requires the beatmap and ruleset to be locally available. If not, return a default value.
+                if (attributes?.DifficultyAttributes == null || performanceCalculator == null)
+                    return null;
+
+                var result = await performanceCalculator.CalculateAsync(scoreInfo, attributes.Value.DifficultyAttributes, default).ConfigureAwait(false);
+
+                // scoreInfo.PP = result.Total;
+
+                return result.Total;
         }
 
         [Resolved]
