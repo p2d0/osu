@@ -1204,6 +1204,11 @@ namespace osu.Game
             LocalUserStatisticsProvider statisticsProvider;
 
             loadComponentSingleFile(statisticsProvider = new LocalUserStatisticsProvider(), Add, true);
+
+            LocalUserManager localUserManager;
+
+            dependencies.Cache(localUserManager = new LocalUserManager(ScoreManager, API, statisticsProvider));
+
             loadComponentSingleFile(difficultyRecommender = new DifficultyRecommender(statisticsProvider), Add, true);
             loadComponentSingleFile(new UserStatisticsWatcher(statisticsProvider), Add, true);
             loadComponentSingleFile(Toolbar = new Toolbar
@@ -1582,25 +1587,11 @@ namespace osu.Game
                     return true;
 
                 case GlobalAction.ToggleProfile:
-                    {
-                        if (userProfile.State.Value == Visibility.Visible)
-                        {
-                            userProfile.Hide();
-                            return true;
-                        }
-
-                        var user = API.LocalUser.Value;
-                        if (user.Id <= 0)
-                        {
-                            userProfile.ShowLocalUser(user);
-                        }
-                        else
-                        {
-                            ShowUser(user);
-                        }
-
-                        return true;
-                    }
+                    if (userProfile.State.Value == Visibility.Visible)
+                        userProfile.Hide();
+                    else
+                        ShowUser(API.LocalUser.Value);
+                    return true;
 
                 case GlobalAction.RandomSkin:
                     // Don't allow random skin selection while in the skin editor.
