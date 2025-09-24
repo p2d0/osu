@@ -42,7 +42,7 @@ namespace osu.Game.Online
         [Resolved]
         private LocalUserManager localUserManager { get; set; } = null!;
 
-        private readonly IBindable<APIUser> localUser = new Bindable<APIUser>();
+        public readonly IBindable<APIUser> localUser = new Bindable<APIUser>();
 
         private readonly Dictionary<string, UserStatistics> statisticsCache = new Dictionary<string, UserStatistics>();
 
