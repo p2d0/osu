@@ -83,10 +83,28 @@ namespace osu.Game.Overlays.Login
             switch (state.NewValue)
             {
                 case APIState.Offline:
-                    Child = form = new LoginForm
+                    Child = new FillFlowContainer
                     {
-                        RequestHide = RequestHide
+                        RelativeSizeAxes = Axes.X,
+                        AutoSizeAxes = Axes.Y,
+                        Padding = new MarginPadding { Horizontal = SettingsPanel.CONTENT_MARGINS },
+                        Direction = FillDirection.Vertical,
+                        Spacing = new Vector2(0f, SettingsSection.ITEM_SPACING),
+                        Children = new Drawable[]
+                        {
+                            new UserRankPanel(api.LocalUser.Value)
+                            {
+                                RelativeSizeAxes = Axes.X,
+                                Action = RequestHide
+                            },
+                            dropdown = new UserDropdown { RelativeSizeAxes = Axes.X },
+                            form = new LoginForm
+                            {
+                                RequestHide = RequestHide
+                            }
+                        },
                     };
+
                     break;
 
                 case APIState.RequiresSecondFactorAuth:

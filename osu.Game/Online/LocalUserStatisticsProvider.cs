@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
@@ -12,6 +13,7 @@ using osu.Game.Online.API;
 using osu.Game.Online.API.Requests;
 using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Rulesets;
+using osu.Game.Scoring;
 using osu.Game.Users;
 
 namespace osu.Game.Online
@@ -37,6 +39,9 @@ namespace osu.Game.Online
         [Resolved]
         private IAPIProvider api { get; set; } = null!;
 
+        [Resolved]
+        private LocalUserManager localUserManager { get; set; } = null!;
+
         private readonly IBindable<APIUser> localUser = new Bindable<APIUser>();
 
         private readonly Dictionary<string, UserStatistics> statisticsCache = new Dictionary<string, UserStatistics>();
@@ -61,15 +66,28 @@ namespace osu.Game.Online
             }, true);
         }
 
-        private void initialiseStatistics()
+        private async void initialiseStatistics()
         {
             statisticsCache.Clear();
 
-            if (api.LocalUser.Value == null || api.LocalUser.Value.Id <= 1)
+            if (api.LocalUser.Value == null)
                 return;
 
+
             foreach (var ruleset in rulesets.AvailableRulesets.Where(r => r.IsLegacyRuleset()))
-                RefetchStatistics(ruleset);
+                if(api.LocalUser.Value.Id <= 1)
+                    await UpdateUserStatisticsAsync(ruleset);
+                else
+                    RefetchStatistics(ruleset);
+        }
+
+        private async Task UpdateUserStatisticsAsync(RulesetInfo ruleset, Action<UserStatisticsUpdate>? callback = null)
+        {
+            if (!ruleset.IsLegacyRuleset())
+                throw new InvalidOperationException($@"Retrieving statistics is not supported for ruleset {ruleset.ShortName}");
+            var user = await localUserManager.GetLocalUserWithStatisticsAsync(ruleset);
+            UpdateStatistics(user.Statistics, ruleset, callback);
+
         }
 
         public void RefetchStatistics(RulesetInfo ruleset, Action<UserStatisticsUpdate>? callback = null)
