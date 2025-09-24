@@ -133,7 +133,7 @@ namespace osu.Game.Overlays.Login
                             AutoSizeAxes = Axes.Y,
                             Child = new SettingsButton
                             {
-                                Text = "LocalUser",
+                                Text = "Change Local Username",
                                 Action = performLocalUser
                             },
                         }
