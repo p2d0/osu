@@ -14,60 +14,22 @@ using System.Linq;
 using System;
 using osu.Framework.Localisation;
 using osu.Framework.Bindables;
+using osu.Game.Online.API.Requests;
 
 namespace osu.Game.Overlays.Profile.Sections
 {
     public partial class LocalRanksSection : ProfileSection
     {
-        public override string Identifier => "local_ranks";
         public override LocalisableString Title => UsersStrings.ShowExtraTopRanksTitle;
-        // public Bindable<IReadOnlyList<ScoreInfo>> Scores { get; } = new Bindable<IReadOnlyList<ScoreInfo>>(Array.Empty<ScoreInfo>());
-        private FillFlowContainer ScoresContainer;
 
-        // protected override void LoadComplete()
-        // {
-        //     base.LoadComplete();
-        //     Scores.BindValueChanged(_ => onScoresChanged(), true);
-        // }
+        public override string Identifier => @"top_ranks";
 
-        // private void onScoresChanged()
-        // {
-        //     Schedule(() => {
-        //         ScoresContainer.Clear();
-        //         ScoresContainer.ChildrenEnumerable = Scores.Value.Select((s, i) => new DrawableProfileLocalWeightedScore(s, Math.Pow(0.95, i)));
-        //     });
-        //     // ScoresContainer.AddRange();
-        // }
-
-        public LocalRanksSection(List<ScoreInfo> scores)
+        public LocalRanksSection()
         {
-            // RelativeSizeAxes = Axes.X;
-            // AutoSizeAxes = Axes.Y;
-            // Direction = FillDirection.Vertical;
-            // Spacing = new Vector2(0, 2);
-            Children = new []
+            Children = new[]
             {
-                new FillFlowContainer
-                {
-                    RelativeSizeAxes = Axes.X,
-                    AutoSizeAxes = Axes.Y,
-                    Direction = FillDirection.Vertical,
-                    Spacing = new Vector2(0, 2),
-                    ChildrenEnumerable = scores.Select((s, i) => new DrawableProfileLocalWeightedScore(s, Math.Pow(0.95, i)))
-                }
+                new PaginatedLocalScoreContainer(ScoreType.Best, User, UsersStrings.ShowExtraTopRanksBestTitle),
             };
-            // AddInternal(new FillFlowContainer
-            // {
-            //     RelativeSizeAxes = Axes.X,
-            //     AutoSizeAxes = Axes.Y,
-            //     Direction = FillDirection.Vertical,
-            //     Spacing = new Vector2(0, 2),
-            //     Children = new Drawable[]
-            //     {
-            //         // new ProfileSectionHeader(UsersStrings.ShowExtraTopRanksTitle),
-            //         ScoresContainer = ,
-            //     }
-            // });
         }
     }
 }

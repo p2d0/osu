@@ -96,15 +96,15 @@ namespace osu.Game.Scoring
             return Realm.Run(r => r.All<ScoreInfo>().Where(query).ToList().Detach());
         }
 
-        public List<ScoreInfo> ByUsername(string username)
+        public List<ScoreInfo> ByUsername(string username, RulesetInfo ruleset)
         {
-            return Realm.Run(r => r.All<ScoreInfo>().Filter("RealmUser.Username == $0 && PP != null && RankInt != -1 SORT(PP DESC) DISTINCT(BeatmapInfo.ID,BeatmapInfo.DifficultyName)", username)
+            return Realm.Run(r => r.All<ScoreInfo>().Filter("RealmUser.Username == $0 && PP != null && RankInt != -1 && Ruleset.ShortName == $1 SORT(PP DESC) DISTINCT(BeatmapInfo.ID,BeatmapInfo.DifficultyName)", username, ruleset.ShortName)
                              .ToList().Detach());
         }
 
-        public List<ScoreInfo> All()
+        public List<ScoreInfo> All(RulesetInfo ruleset)
         {
-            return Realm.Run(r => r.All<ScoreInfo>().Filter("PP != null && RankInt != -1 && ANY Files.Filename == 'replay.osr'  SORT(PP DESC) DISTINCT(BeatmapInfo.ID,BeatmapInfo.DifficultyName)")
+            return Realm.Run(r => r.All<ScoreInfo>().Filter("PP != null && RankInt != -1 && ANY Files.Filename == 'replay.osr' && Ruleset.ShortName == $0  SORT(PP DESC) DISTINCT(BeatmapInfo.ID,BeatmapInfo.DifficultyName)", ruleset.ShortName)
                              .ToList().Detach());
         }
 

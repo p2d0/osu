@@ -52,6 +52,9 @@ namespace osu.Game.Overlays
         [Resolved]
         private ScoreManager ScoreManager { get; set; } = null!;
 
+        [Resolved]
+        private LocalUserManager localUserManager { get; set; } = null!;
+
         private IUser? user;
         private IRulesetInfo? ruleset;
 
@@ -94,27 +97,28 @@ namespace osu.Game.Overlays
 
         public void ShowUser(IUser userToShow, IRulesetInfo? userRuleset = null)
         {
-            // if (userToShow.OnlineID == APIUser.SYSTEM_USER_ID)
-            //     return;
 
             user = userToShow;
             ruleset = userRuleset;
 
             Show();
-            Scheduler.AddOnce(fetchAndSetContent);
+            if (userToShow.OnlineID == APIUser.SYSTEM_USER_ID)
+                Scheduler.AddOnce(fetchAndSetContentForLocalUser);
+            else
+                Scheduler.AddOnce(fetchAndSetContent);
         }
 
-        public void ShowLocalUser(APIUser user)
-        {
-            this.user = user;
-            ruleset = null;
-            Show();
-            Logger.Log($"Showingthe window");
-            loadingLayer.Show();
-            Scheduler.AddOnce(() => fetchAndSetContentForLocalUser(user));
-        }
+        // public void ShowLocalUser(APIUser user, IRulesetInfo? userRuleset = null)
+        // {
+        //     this.user = user;
+        //     ruleset = userRuleset;
+        //     Show();
+        //     Logger.Log($"Showingthe window");
+        //     loadingLayer.Show();
+        //     Scheduler.AddOnce(() => fetchAndSetContentForLocalUser(user));
+        // }
 
-        private async void fetchAndSetContentForLocalUser(APIUser user)
+        private async void fetchAndSetContentForLocalUser()
         {
             if (sectionsContainer != null)
             {
@@ -135,39 +139,18 @@ namespace osu.Game.Overlays
             {
                 loadingLayer.Show();
 
-                // Run heavy work in background
-                var (scores, userProfileData) = await Task.Run(() =>
-                {
-                    var scores = user.Username == "Guest" ? ScoreManager.All() : ScoreManager.ByUsername(user.Username);
-                    double totalPP = 0;
-                    double weight = 1;
+                var actualRuleset = rulesets.GetRuleset(ruleset?.ShortName ?? @"osu").AsNonNull();
+                // var scores = await
+                //     Task.Run(() => {
+                //         return user.Username == "Guest" ? ScoreManager.All(actualRuleset) : ScoreManager.ByUsername(user.Username,actualRuleset);
+                //     });
 
-                    foreach (var score in scores.Take(100))
-                    {
-                        totalPP += score.PP.Value * weight;
-                        weight *= 0.95;
-                    }
+                var userWithStats = await localUserManager.GetLocalUserWithStatisticsAsync(actualRuleset);
 
-                    var userWithStats = new APIUser
-                    {
-                        Id = user.Id,
-                        Username = user.Username,
-                        CountryCode = user.CountryCode,
-                        CoverUrl = user.CoverUrl,
-                        Statistics = new UserStatistics
-                        {
-                            IsRanked = true,
-                            PP = (decimal)totalPP,
-                            Accuracy = scores.Any() ? scores.Average(s => s.Accuracy) : 1,
-                            PlayCount = scores.Count,
-                        }
-                    };
-
-                    return (scores.Take(100).ToList(), new UserProfileData(userWithStats, rulesets.GetRuleset(0)));
-                });
+                var userProfileData = new UserProfileData(userWithStats, actualRuleset);
 
                 // This runs on main thread automatically
-                var localRanks = new LocalRanksSection(scores);
+                var localRanks = new LocalRanksSection();
                 sections = new ProfileSection[] { localRanks };
                 Header.User.Value = userProfileData;
 
