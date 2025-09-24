@@ -217,7 +217,7 @@ namespace osu.Game.Screens.Play
 
             await submitScore(score).ConfigureAwait(false);
             spectatorClient.EndPlaying(GameplayState);
-            userStatisticsWatcher?.RegisterForStatisticsUpdateAfter(score.ScoreInfo);
+            OnShowingResults += () => userStatisticsWatcher?.RegisterForStatisticsUpdateAfter(score.ScoreInfo);
         }
 
         private async Task<double?> calculatePP(ScoreInfo scoreInfo){
