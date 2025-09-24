@@ -57,7 +57,6 @@ namespace osu.Game.Online
         {
             base.LoadComplete();
 
-            localUser.BindTo(api.LocalUser);
             localUser.BindValueChanged(_ =>
             {
                 // queuing up requests directly on user change is unsafe, as the API status may have not been updated yet.
@@ -85,7 +84,7 @@ namespace osu.Game.Online
         {
             if (!ruleset.IsLegacyRuleset())
                 throw new InvalidOperationException($@"Retrieving statistics is not supported for ruleset {ruleset.ShortName}");
-            var user = await localUserManager.GetLocalUserWithStatisticsAsync(ruleset);
+            var user = await localUserManager.GetLocalUserWithStatisticsAsync(ruleset).ConfigureAwait(false);
             UpdateStatistics(user.Statistics, ruleset, callback);
 
         }

@@ -85,6 +85,7 @@ using Sentry;
 using IntroScreen = osu.Game.Screens.Menu.IntroScreen;
 using MatchType = osu.Game.Online.Rooms.MatchType;
 using osu.Game.Models;
+using osu.Game.Rulesets;
 
 namespace osu.Game
 {
@@ -593,6 +594,12 @@ namespace osu.Game
         /// </summary>
         /// <param name="user">The user to display.</param>
         public void ShowUser(IUser user) => waitForReady(() => userProfile, _ => userProfile.ShowUser(user));
+
+        /// <summary>
+        /// Show a user's profile as an overlay.
+        /// </summary>
+        /// <param name="user">The user to display.</param>
+        public void ShowUser(IUser user, IRulesetInfo ruleset) => waitForReady(() => userProfile, _ => userProfile.ShowUser(user, ruleset));
 
         /// <summary>
         /// Show a beatmap's set as an overlay, displaying the given beatmap.
@@ -1574,7 +1581,7 @@ namespace osu.Game
                     if (userProfile.State.Value == Visibility.Visible)
                         userProfile.Hide();
                     else
-                        ShowUser(API.LocalUser.Value);
+                        ShowUser(API.LocalUser.Value, Ruleset.Value);
                     return true;
 
                 case GlobalAction.RandomSkin:
