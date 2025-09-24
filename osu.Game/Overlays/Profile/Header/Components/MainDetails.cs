@@ -26,6 +26,7 @@ namespace osu.Game.Overlays.Profile.Header.Components
         private ProfileValueDisplay ppInfo = null!;
         private ProfileValueDisplay detailGlobalRank = null!;
         private ProfileValueDisplay detailCountryRank = null!;
+        private Container rankGraphContainer = null!;
         private RankGraph rankGraph = null!;
 
         public readonly Bindable<UserProfileData?> User = new Bindable<UserProfileData?>();
@@ -82,7 +83,7 @@ namespace osu.Game.Overlays.Profile.Header.Components
                             }
                         }
                     },
-                    new Container
+                    rankGraphContainer = new Container
                     {
                         RelativeSizeAxes = Axes.X,
                         Height = 60,
@@ -168,7 +169,21 @@ namespace osu.Game.Overlays.Profile.Header.Components
             detailCountryRank.Content = user?.Statistics?.CountryRank?.ToLocalisableString("\\##,##0") ?? (LocalisableString)"-";
             detailCountryRank.ContentTooltipText = getCountryRankTooltipText(user);
 
-            rankGraph.Statistics.Value = user?.Statistics;
+            if(user?.OnlineID == APIUser.SYSTEM_USER_ID)
+            {
+                Schedule(() =>{
+                    rankGraph.Hide();
+                    rankGraph = new PPGraph
+                    {
+                        RelativeSizeAxes = Axes.Both,
+                    };
+                    rankGraphContainer.Clear();
+                    rankGraphContainer.Add(rankGraph);
+                    rankGraph.Statistics.Value = user?.Statistics;
+                    rankGraph.Show();
+                });
+            } else
+                rankGraph.Statistics.Value = user?.Statistics;
         }
 
         private static LocalisableString getGlobalRankTooltipText(APIUser? user)
