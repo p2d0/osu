@@ -3,12 +3,16 @@
 
 using System;
 using osu.Framework.Graphics;
+using osu.Framework.Bindables;
 
 namespace osu.Game.Overlays.Settings
 {
     public interface ISettingsItem : IDrawable, IDisposable
     {
         event Action SettingChanged;
+
+        Bindable<bool>? IsVisible { get; }
+        Bindable<bool>? IsHidden { get; }
 
         /// <summary>
         /// Whether this setting has a classic default (ie. a different default which better aligns with osu-stable expectations).

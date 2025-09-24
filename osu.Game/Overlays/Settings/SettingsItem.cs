@@ -19,6 +19,8 @@ using osu.Game.Graphics;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics.Containers;
 using osuTK;
+using osu.Framework.Extensions.IEnumerableExtensions;
+using Logger = osu.Framework.Logging.Logger;
 
 namespace osu.Game.Overlays.Settings
 {
@@ -155,7 +157,10 @@ namespace osu.Game.Overlays.Settings
 
         public bool FilteringActive { get; set; }
 
-        public BindableBool CanBeShown { get; } = new BindableBool(true);
+        public virtual Bindable<bool>? IsVisible { get; set; } = new BindableBool(true);
+        public virtual Bindable<bool>? IsHidden { get; set; } = new BindableBool(false);
+
+        public virtual Bindable<bool> CanBeShown { get; set; } = new BindableBool(true);
         IBindable<bool> IConditionalFilterable.CanBeShown => CanBeShown;
 
         public event Action SettingChanged;
@@ -217,6 +222,20 @@ namespace osu.Game.Overlays.Settings
             // never loaded, but requires bindable storage.
             if (controlWithCurrent == null)
                 throw new ArgumentException(@$"Control created via {nameof(CreateControl)} must implement {nameof(IHasCurrentValue<T>)}");
+
+            IsVisible.BindValueChanged(visible => {
+                if (visible.NewValue)
+                    Show();
+                else
+                    Hide();
+            });
+
+            IsHidden.BindValueChanged(visible => {
+                if (visible.NewValue)
+                    Hide();
+                else
+                    Show();
+            });
 
             controlWithCurrent.Current.ValueChanged += _ => SettingChanged?.Invoke();
             controlWithCurrent.Current.DisabledChanged += _ => updateDisabled();

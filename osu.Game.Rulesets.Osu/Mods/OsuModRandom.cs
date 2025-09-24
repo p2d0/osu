@@ -35,7 +35,7 @@ namespace osu.Game.Rulesets.Osu.Mods
 
         public override Type[] IncompatibleMods => base.IncompatibleMods.Append(typeof(OsuModTargetPractice)).ToArray();
 
-        [SettingSource("Angle sharpness", "How sharp angles should be")]
+        [SettingSource("Angle sharpness", "How sharp angles should be", IsHidden = nameof(CustomAngle))]
         public BindableFloat AngleSharpness { get; } = new BindableFloat(7)
         {
             MinValue = 1,
@@ -43,7 +43,7 @@ namespace osu.Game.Rulesets.Osu.Mods
             Precision = 0.1f
         };
 
-        [SettingSource("Stream Angle sharpness", "How sharp angles should be")]
+        [SettingSource("Stream Angle sharpness", "How sharp angles should be", IsHidden = nameof(CustomAngle))]
         public BindableFloat StreamAngleSharpness { get; } = new BindableFloat(7)
         {
             MinValue = 1,
@@ -51,37 +51,8 @@ namespace osu.Game.Rulesets.Osu.Mods
             Precision = 0.1f
         };
 
-        [SettingSource("Aim Distance Multiplier", "How much bigger the distance")]
-        public BindableFloat AimDistanceMultiplier { get; } = new BindableFloat(1)
-        {
-            MinValue = 0.5f,
-            MaxValue = 10,
-            Precision = 0.01f
-        };
-
-        [SettingSource("Stream Distance Multiplier", "How much bigger the distance")]
-        public BindableFloat StreamDistanceMultiplier { get; } = new BindableFloat(1)
-        {
-            MinValue = 0.1f,
-            MaxValue = 50,
-            Precision = 0.1f
-        };
-
-        [SettingSource("Divide by divisor", "Divide distances by divisor")]
-        public Bindable<bool> DivideByDivisor { get; } = new BindableBool(false);
-
-        [SettingSource("Stream Distance", "How much bigger the distance")]
-        public BindableInt StreamDistance { get; } = new BindableInt(100)
-        {
-            MinValue = 25,
-            MaxValue = 500,
-        };
-
-        [SettingSource("Hard random", "Remove circle padding and unnecessary shifting")]
-        public Bindable<bool> Hardcore { get; } = new BindableBool(false);
-
-        [SettingSource("Squarish angle", "Squareish angle")]
-        public Bindable<bool> Squareish { get; } = new BindableBool(false);
+        [SettingSource("Custom angle", "Custom angle")]
+        public Bindable<bool> CustomAngle { get; } = new BindableBool(false);
 
         public enum AngleEnum {
             Square,
@@ -101,33 +72,69 @@ namespace osu.Game.Rulesets.Osu.Mods
             { AngleEnum.FourtyFive, 0.785398f } // 45 degrees in radians
         };
 
-        [SettingSource("Angle", "Angle selector")]
+        [SettingSource("Angle", "Angle selector", IsVisible = nameof(CustomAngle))]
         public Bindable<AngleEnum> Angle { get; } = new Bindable<AngleEnum>
         {
             Default = AngleEnum.Square,
         };
 
 
-
-        [SettingSource("Extend playarea", "Extend playarea")]
-        public Bindable<bool> ExtendPlayArea { get; } = new BindableBool(false);
-
-        [SettingSource("Infinite playarea", "Infinite playarea")]
-        public Bindable<bool> InfinitePlayArea { get; } = new BindableBool(false);
-
-        [SettingSource("SquareMod", "SquareMod")]
-        public Bindable<bool> SquareMod { get; } = new BindableBool(false);
-
-        [SettingSource("Divisor", "Divisor selector")]
-        public BindableInt Divisor { get; } = new BindableInt(2)
+        [SettingSource("Aim Distance Multiplier", "How much bigger the distance")]
+        public BindableFloat AimDistanceMultiplier { get; } = new BindableFloat(1)
         {
-            MinValue = 1,
-            MaxValue = 16,
-            Default = 2,
+            MinValue = 0.5f,
+            MaxValue = 10,
+            Precision = 0.01f
         };
 
-        [SettingSource("Longer jumps get a smaller increase in distance", "Longer jumps get a smaller increase in distance")]
+        [SettingSource("Power jumps", "Longer jumps get a smaller increase in distance")]
         public BindableBool PowerJumps { get; } = new BindableBool(false);
+
+        [SettingSource("Stream Distance Multiplier", "How much bigger the distance")]
+        public BindableFloat StreamDistanceMultiplier { get; } = new BindableFloat(1)
+        {
+            MinValue = 0.1f,
+            MaxValue = 50,
+            Precision = 0.1f
+        };
+
+        [SettingSource("Exponential streams", "Larger stream spacing receives diminishing distance increases")]
+        public BindableBool PowerStreams { get; } = new BindableBool(false);
+
+        [SettingSource("Divide by divisor", "Use the beat divisor to distinguish streams/jumps")]
+        public Bindable<bool> DivideByDivisor { get; } = new BindableBool(false);
+
+        [SettingSource("Divisor", "Divisor selector", IsVisible = nameof(DivideByDivisor))]
+        public BindableInt Divisor { get; } = new BindableInt(2)
+            {
+                MinValue = 1,
+                MaxValue = 16,
+                Default = 2,
+            };
+
+        [SettingSource("Stream Distance", "How much bigger the distance", IsHidden = nameof(DivideByDivisor))]
+        public BindableInt StreamDistance { get; } = new BindableInt(100)
+        {
+            MinValue = 25,
+            MaxValue = 500,
+        };
+
+        [SettingSource("Hard random", "Remove circle padding and unnecessary shifting")]
+        public Bindable<bool> Hardcore { get; } = new BindableBool(true);
+
+
+
+
+        // [SettingSource("Extend playarea", "Extend playarea")]
+        public Bindable<bool> ExtendPlayArea { get; } = new BindableBool(false);
+
+        // [SettingSource("Infinite playarea", "Infinite playarea")]
+        public Bindable<bool> InfinitePlayArea { get; } = new BindableBool(false);
+
+        // [SettingSource("SquareMod", "SquareMod")]
+        public Bindable<bool> SquareMod { get; } = new BindableBool(false);
+
+
 
 
         // [SettingSource("Square Distance", "Square distance")]
@@ -166,11 +173,46 @@ namespace osu.Game.Rulesets.Osu.Mods
                 originalDistance = positionInfos[i].DistanceFromPrevious;
                 if (isStream(osuBeatmap, positionInfos,i, originalDistance))
                 {
-                    positionInfos[i].DistanceFromPrevious *= StreamDistanceMultiplier.Value;
+                    if(PowerStreams.Value){
+                        float distance = positionInfos[i].DistanceFromPrevious;
+                        float M = StreamDistanceMultiplier.Value;
+
+                        // --- TUNABLE PARAMETERS ---
+
+                        // 1. How much to amplify the base multiplier at zero distance.
+                        // A value of 2.5 means the initial bonus is 2.5 times the base bonus.
+                        // Based on your example, 2.65 is a great starting point.
+                        float bonusAmplifier = 2.65f;
+
+                        // 2. How quickly the bonus effect decays with distance.
+                        // A larger value means a faster drop-off.
+                        // Based on your example, 0.023 is a great starting point.
+                        float decayRate = 0.023f;
+
+                        // --------------------------
+
+
+                        // Step 1: Calculate the maximum possible bonus (at distance = 0)
+                        // We use (M - 1) because a multiplier of M=10 is a "bonus" of 9.
+                        float maxBonus = (M - 1f) * bonusAmplifier;
+
+                        // Step 2: Calculate the decay factor based on distance
+                        // MathF.Exp() is the e^x function. The negative sign makes it decay.
+                        float decayFactor = MathF.Exp(-decayRate * distance);
+
+                        // Step 3: Calculate the actual bonus for this distance
+                        float currentBonus = maxBonus * decayFactor;
+
+                        // Step 4: Apply the final multiplier
+                        // The final multiplier is 1.0 (no change) plus the current bonus.
+                        positionInfos[i].DistanceFromPrevious *= (1f + currentBonus);
+                    }
+                    else
+                        positionInfos[i].DistanceFromPrevious *= StreamDistanceMultiplier.Value;
                 }
                 else
                 {
-                    // if(Squareish.Value)
+                    // if(CustomAngle.Value)
                     //     positionInfos[i].DistanceFromPrevious = SquareDistance.Value;
                     // else
                     if(PowerJumps.Value)
@@ -255,12 +297,12 @@ namespace osu.Game.Rulesets.Osu.Mods
             if(DivideByDivisor.Value) {
                 // Logger.Log($"Divisor {osuBeatmap.ControlPointInfo.GetClosestBeatDivisor(positionInfos.HitObject.StartTime)}");
                 var beatLength = osuBeatmap.ControlPointInfo.TimingPointAt(positionInfos[i].HitObject.StartTime).BeatLength;
-                if(i+1 < positionInfos.Count() && positionInfos[i].HitObject is HitObject circle && positionInfos[i+1].HitObject is HitObject nextCircle){
+                if(i+1 < positionInfos.Count && positionInfos[i].HitObject is HitObject circle && positionInfos[i+1].HitObject is HitObject nextCircle){
                     Logger.Log($"{nextCircle.StartTime - circle.StartTime}");
-                    Logger.Log($"beatLength");
-                    var isStream = nextCircle.StartTime - circle.StartTime < beatLength / Divisor.Value;
+                    // NOTE: The +1 feels hacky
+                    var isStream = nextCircle.StartTime - circle.StartTime + 1 < beatLength / Divisor.Value;
                     if(!isStream && i > 0 && positionInfos[i-1] != null && positionInfos[i-1].HitObject is HitObject previousCircle)
-                        return circle.StartTime - previousCircle.StartTime < beatLength / Divisor.Value;
+                        return circle.StartTime - previousCircle.StartTime + 1 < beatLength / Divisor.Value;
                 }
 
                 return true;
@@ -368,7 +410,7 @@ namespace osu.Game.Rulesets.Osu.Mods
             float relativeAngle = (float)Math.PI - angle;
             // Logger.Log($"relativeAngle {relativeAngle} angle {angle}");
 
-            if(Squareish.Value)
+            if(CustomAngle.Value)
                 relativeAngle = GetAngleValue();
 
             return flowDirection ? -relativeAngle : relativeAngle;
@@ -395,7 +437,7 @@ namespace osu.Game.Rulesets.Osu.Mods
 
             float relativeAngle = (float)Math.PI - angle;
 
-            if(Squareish.Value)
+            if(CustomAngle.Value)
                 relativeAngle = GetAngleValue();
 
             return flowDirection ? -relativeAngle : relativeAngle;
@@ -501,7 +543,7 @@ namespace osu.Game.Rulesets.Osu.Mods
             osuBeatmap.HitObjects = hitObjects;
 
             beatmap.Breaks.Clear();
-            Logger.Log($"Breaks: {beatmap.Breaks.Count()}");
+            Logger.Log($"Breaks: {beatmap.Breaks.Count}");
             Logger.Log($"TotalBreakTime: {beatmap.TotalBreakTime}ms" );
         }
     }
