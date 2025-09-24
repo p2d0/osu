@@ -81,7 +81,7 @@ namespace osu.Game.Online
                     RefetchStatistics(ruleset);
         }
 
-        private async Task UpdateUserStatisticsAsync(RulesetInfo ruleset, Action<UserStatisticsUpdate>? callback = null)
+        public async Task UpdateUserStatisticsAsync(RulesetInfo ruleset, Action<UserStatisticsUpdate>? callback = null)
         {
             if (!ruleset.IsLegacyRuleset())
                 throw new InvalidOperationException($@"Retrieving statistics is not supported for ruleset {ruleset.ShortName}");
