@@ -9,15 +9,19 @@ using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Effects;
 using osu.Framework.Graphics.Sprites;
-using osu.Framework.Logging;
 using osu.Game.Graphics;
+using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Localisation;
 using osu.Game.Online.API;
+using osu.Game.Online;
 using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Users.Drawables;
 using osuTK;
 using osuTK.Graphics;
+using osu.Framework.Logging;
+using osu.Game.Users;
+using osu.Game.Rulesets;
 
 namespace osu.Game.Overlays.Toolbar
 {
@@ -27,11 +31,21 @@ namespace osu.Game.Overlays.Toolbar
 
         private IBindable<APIUser> localUser = null!;
 
+        private OsuSpriteText pp = null!;
+
         private LoadingSpinner spinner = null!;
 
         private SpriteIcon failingIcon = null!;
 
         private IBindable<APIState> apiState = null!;
+
+        [Resolved]
+        private IBindable<RulesetInfo> ruleset { get; set; } = null!;
+
+        [Resolved]
+        private LocalUserStatisticsProvider? statisticsProvider { get; set; }
+
+        // public Bindable<ScoreBasedUserStatisticsUpdate?> LatestUpdate { get; } = new Bindable<ScoreBasedUserStatisticsUpdate?>();
 
         public ToolbarUserButton()
         {
@@ -41,11 +55,12 @@ namespace osu.Game.Overlays.Toolbar
         [BackgroundDependencyLoader]
         private void load(OsuColour colours, IAPIProvider api, LoginOverlay? login)
         {
+
             Flow.Add(new Container
             {
                 Masking = true,
                 CornerRadius = 4,
-                Size = new Vector2(32),
+                Size = new Vector2(64),
                 Anchor = Anchor.CentreLeft,
                 Origin = Anchor.CentreLeft,
                 EdgeEffect = new EdgeEffectParameters
@@ -56,10 +71,15 @@ namespace osu.Game.Overlays.Toolbar
                 },
                 Children = new Drawable[]
                 {
-                    avatar = new UpdateableAvatar(isInteractive: false)
-                    {
-                        RelativeSizeAxes = Axes.Both,
+                    pp = new OsuSpriteText {
+                        Anchor = Anchor.CentreRight,
+                        Origin = Anchor.CentreRight
+                        // RelativeSizeAxes = Axes.Both,
                     },
+                    // avatar = new UpdateableAvatar(isInteractive: false)
+                    // {
+                    //     RelativeSizeAxes = Axes.Both,
+                    // },
                     spinner = new LoadingLayer(dimBackground: true, withBox: false, blockInput: false)
                     {
                         Anchor = Anchor.Centre,
@@ -91,16 +111,45 @@ namespace osu.Game.Overlays.Toolbar
 
             localUser = api.LocalUser.GetBoundCopy();
             localUser.BindValueChanged(userChanged, true);
-
             StateContainer = login;
+
+            if (statisticsProvider != null)
+                statisticsProvider.StatisticsUpdated += onStatisticsUpdated;
+
+            ruleset.BindValueChanged(_ => updateDisplay(), true);
+
+        }
+
+        private void onStatisticsUpdated(UserStatisticsUpdate update)
+        {
+            if (update.Ruleset.Equals(ruleset.Value))
+                updateDisplay();
+        }
+
+        private void updateDisplay()
+        {
+            var statistics = statisticsProvider?.GetStatisticsFor(ruleset.Value);
+
+            pp.Text = ((int)Math.Abs(statistics?.PP ?? 0M)).ToString() + "PP";
         }
 
         private void userChanged(ValueChangedEvent<APIUser> user) => Schedule(() =>
         {
-            Logger.Log("User changed, updating toolbar display", level: LogLevel.Debug);
             Text = user.NewValue.Username;
-            avatar.User = user.NewValue;
+            // pp.Text = ((int)Math.Abs(user.NewValue.Statistics.PP ?? 0M)).ToString() + "PP";
+            // avatar.User = user.NewValue;
         });
+
+        protected override void LoadComplete()
+        {
+            base.LoadComplete();
+            // LatestUpdate.BindValueChanged(val =>
+            // {
+            //     Logger.Log("Nice one");
+            //     pp.Text = ((int)Math.Abs(val.NewValue.After.PP ?? 0M)).ToString() + "PP";
+            // });
+        }
+
 
         private void onlineStateChanged(ValueChangedEvent<APIState> state) => Schedule(() =>
         {
