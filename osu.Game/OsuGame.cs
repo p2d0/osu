@@ -1211,6 +1211,7 @@ namespace osu.Game
             LocalUserStatisticsProvider statisticsProvider;
 
             loadComponentSingleFile(statisticsProvider = new LocalUserStatisticsProvider(), Add, true);
+            statisticsProvider.localUser.BindTo(API.LocalUser);
 
             LocalUserManager localUserManager;
 
