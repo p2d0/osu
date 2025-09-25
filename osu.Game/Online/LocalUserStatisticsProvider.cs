@@ -75,7 +75,7 @@ namespace osu.Game.Online
 
             foreach (var ruleset in rulesets.AvailableRulesets.Where(r => r.IsLegacyRuleset()))
                 if(api.LocalUser.Value.Id <= 1)
-                    await UpdateUserStatisticsAsync(ruleset);
+                    await UpdateUserStatisticsAsync(ruleset).ConfigureAwait(false);
                 else
                     RefetchStatistics(ruleset);
         }

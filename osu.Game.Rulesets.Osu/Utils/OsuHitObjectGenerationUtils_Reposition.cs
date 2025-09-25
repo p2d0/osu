@@ -64,6 +64,9 @@ namespace osu.Game.Rulesets.Osu.Utils
         /// Reposition the hit objects according to the information in <paramref name="objectPositionInfos"/>.
         /// </summary>
         /// <param name="objectPositionInfos">Position information for each hit object.</param>
+        /// <param name="isHardcore">Remove circle padding and unnecessary shifting</param>
+        /// <param name="extendPlayArea">Extend Play area</param>
+        /// <param name="infinitePlayArea">Infinite play area</param>
         /// <returns>The repositioned hit objects.</returns>
         public static List<OsuHitObject> RepositionHitObjects(IEnumerable<ObjectPositionInfo> objectPositionInfos,
                                                               bool isHardcore = false,

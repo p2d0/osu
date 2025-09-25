@@ -157,8 +157,8 @@ namespace osu.Game.Overlays.Settings
 
         public bool FilteringActive { get; set; }
 
-        public virtual Bindable<bool>? IsVisible { get; set; } = new BindableBool(true);
-        public virtual Bindable<bool>? IsHidden { get; set; } = new BindableBool(false);
+        public virtual Bindable<bool> IsVisible { get; set; } = new BindableBool(true);
+        public virtual Bindable<bool> IsHidden { get; set; } = new BindableBool(false);
 
         public virtual Bindable<bool> CanBeShown { get; set; } = new BindableBool(true);
         IBindable<bool> IConditionalFilterable.CanBeShown => CanBeShown;

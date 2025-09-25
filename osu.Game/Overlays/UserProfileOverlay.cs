@@ -145,7 +145,7 @@ namespace osu.Game.Overlays
                 //         return user.Username == "Guest" ? ScoreManager.All(actualRuleset) : ScoreManager.ByUsername(user.Username,actualRuleset);
                 //     });
 
-                var userWithStats = await localUserManager.GetLocalUserWithStatisticsAsync(actualRuleset);
+                var userWithStats = await localUserManager.GetLocalUserWithStatisticsAsync(actualRuleset).ConfigureAwait(false);
 
                 var userProfileData = new UserProfileData(userWithStats, actualRuleset);
 

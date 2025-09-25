@@ -187,7 +187,7 @@ namespace osu.Game.Rulesets.Osu.Mods
             // osuBeatmap.Breaks.ForEach(b => new BreakPeriod(0,0));
             osuBeatmap.Breaks.Clear();
             // osuBeatmap.Breaks = new SortedList<BreakPeriod>(Comparer<BreakPeriod>.Default);
-            Logger.Log($"Breaks: {beatmap.Breaks.Count()}");
+            Logger.Log($"Breaks: {beatmap.Breaks.Count}");
             Logger.Log($"TotalBreakTime: {beatmap.TotalBreakTime}ms" );
         }
 
