@@ -125,8 +125,43 @@ namespace osu.Game.Rulesets.Osu.Mods
         // [SettingSource("Infinite playarea", "Infinite playarea")]
         public Bindable<bool> InfinitePlayArea { get; } = new BindableBool(false);
 
-        // [SettingSource("SquareMod", "SquareMod")]
+        [SettingSource("SquareMod", "SquareMod")]
         public Bindable<bool> SquareMod { get; } = new BindableBool(false);
+
+        [SettingSource("SquareModDivisor", "Divisor selector", IsVisible = nameof(SquareMod))]
+        public BindableInt SquareModDivisor { get; } = new BindableInt(2)
+            {
+                MinValue = 1,
+                MaxValue = 16,
+                Default = 2,
+            };
+
+        [SettingSource("SquareModDistance", "Distance", IsVisible = nameof(SquareMod))]
+        public BindableInt SquareModDistance { get; } = new BindableInt(50)
+            {
+                MinValue = 1,
+                MaxValue = 200,
+                Default = 50
+            };
+
+        [SettingSource("SquareModBreak", "Add breaks", IsVisible = nameof(SquareMod))]
+        public Bindable<bool>  SquareModBreak { get; } = new BindableBool(false);
+
+        [SettingSource("SquareModBreakInterval", "Break every x objects", IsVisible = nameof(SquareModBreak))]
+        public BindableInt SquareModBreakInterval { get; } = new BindableInt(50)
+            {
+                MinValue = 10,
+                MaxValue = 500,
+                Default = 100,
+            };
+
+        [SettingSource("SquareModBreakTime", "Break time ms?", IsVisible = nameof(SquareModBreak))]
+        public BindableInt SquareModBreakTime { get; } = new BindableInt(50)
+            {
+                MinValue = 500,
+                MaxValue = 5000,
+                Default = 500,
+            };
 
         [SettingSource("Hard random", "Remove circle padding and unnecessary shifting")]
         public Bindable<bool> Hardcore { get; } = new BindableBool(true);
@@ -485,12 +520,12 @@ namespace osu.Game.Rulesets.Osu.Mods
             var hitObjects = new List<OsuHitObject>();
 
 
-            var beatLength = osuBeatmap.ControlPointInfo.TimingPointAt(firstTime).BeatLength / Divisor.Value;
+            var beatLength = osuBeatmap.ControlPointInfo.TimingPointAt(firstTime).BeatLength / SquareModDivisor.Value;
 
             // if (beatLength <= 0) // Add a safeguard against division by zero or invalid timing points
             //     beatLength = 200;
 
-            var spacing = 200; // The side length of the square
+            var spacing = SquareModDistance.Value; // The side length of the square
 
             do
             {
@@ -527,7 +562,34 @@ namespace osu.Game.Rulesets.Osu.Mods
 
                 circle.ApplyDefaults(osuBeatmap.ControlPointInfo, osuBeatmap.Difficulty);
                 // circle.StartTime = firstTime + (beatLength * hitObjects.Count);
-                circle.StartTime = osuBeatmap.ControlPointInfo.GetClosestSnappedTime(firstTime + (beatLength * hitObjects.Count));
+
+                // Determine the start time for the new circle based on the previous one.
+                double nextStartTime;
+
+                if (hitObjects.Count == 0)
+                {
+                    // This is the very first object.
+                    nextStartTime = osuBeatmap.ControlPointInfo.GetClosestSnappedTime(firstTime);
+                }
+                else
+                {
+                    // Get the previously placed circle.
+                    var previousCircle = hitObjects[hitObjects.Count - 1];
+
+                    // The default next start time is one beatLength after the previous circle.
+                    nextStartTime = previousCircle.StartTime + beatLength;
+
+                    // Check if we need to add a break.
+                    // We use the count *before* adding the new object.
+                    if (SquareModBreak.Value && hitObjects.Count % SquareModBreakInterval.Value == 0)
+                    {
+                        // Add the extra break time to the sequentially calculated time.
+                        nextStartTime += SquareModBreakTime.Value;
+                    }
+                }
+
+                // Set the final, snapped start time for the new circle.
+                circle.StartTime = osuBeatmap.ControlPointInfo.GetClosestSnappedTime(nextStartTime);
                 circle.TimePreempt = firstHitObject.TimePreempt;
                 circle.TimeFadeIn = firstHitObject.TimeFadeIn;
                 // if(osuBeatmap.ControlPointInfo.TimingPointAt(circle.StartTime).BeatLength / 2 > 5)
