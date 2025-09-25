@@ -84,7 +84,7 @@ namespace osu.Game.Online
         {
             if (!ruleset.IsLegacyRuleset())
                 throw new InvalidOperationException($@"Retrieving statistics is not supported for ruleset {ruleset.ShortName}");
-            var user = await localUserManager.GetLocalUserWithStatisticsAsync(ruleset).ConfigureAwait(false);
+            var user = await localUserManager.GetLocalUserWithStatisticsUncached(ruleset).ConfigureAwait(false);
             UpdateStatistics(user.Statistics, ruleset, callback);
 
         }
