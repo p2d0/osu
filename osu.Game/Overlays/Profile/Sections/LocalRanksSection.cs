@@ -10,7 +10,6 @@ using osu.Game.Graphics.UserInterface;
 using osu.Game.Resources.Localisation.Web;
 using osu.Game.Scoring;
 using osuTK;
-using System.Linq;
 using System;
 using osu.Framework.Localisation;
 using osu.Framework.Bindables;

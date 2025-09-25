@@ -297,7 +297,7 @@ namespace osu.Game.Online.API.Requests.Responses
 
         public int OnlineID => Id;
 
-        public bool Equals(APIUser other) => this.MatchesOnlineID(other) && this.Username.Equals(other.Username);
+        public bool Equals(APIUser other) => this.MatchesOnlineID(other) && this.Username == other.Username;
 
 #pragma warning disable 649
         private class Country

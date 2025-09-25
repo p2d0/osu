@@ -71,7 +71,7 @@ namespace osu.Game.Overlays.Profile.Sections.Ranks
             return await
                 Task.Run(() => {
                     return user.User.Username == "Guest" ? ScoreManager.All(user.Ruleset) : ScoreManager.ByUsername(user.User.Username,user.Ruleset);
-                });
+                }).ConfigureAwait(false);
         }
 
         private int drawableItemIndex;
