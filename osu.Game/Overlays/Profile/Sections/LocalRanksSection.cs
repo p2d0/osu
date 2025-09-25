@@ -27,6 +27,7 @@ namespace osu.Game.Overlays.Profile.Sections
         {
             Children = new[]
             {
+                new PaginatedLocalScoreContainer(ScoreType.Recent, User, UsersStrings.ShowExtraRecentActivityTitle),
                 new PaginatedLocalScoreContainer(ScoreType.Best, User, UsersStrings.ShowExtraTopRanksBestTitle),
             };
         }

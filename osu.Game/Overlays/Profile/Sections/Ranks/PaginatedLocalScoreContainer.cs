@@ -15,6 +15,7 @@ using APIUser = osu.Game.Online.API.Requests.Responses.APIUser;
 using osu.Game.Scoring;
 using System.Threading.Tasks;
 using osu.Framework.Logging;
+using System.Linq;
 
 namespace osu.Game.Overlays.Profile.Sections.Ranks
 {
@@ -68,11 +69,19 @@ namespace osu.Game.Overlays.Profile.Sections.Ranks
 
         protected override async Task<List<ScoreInfo>> CreateTask(UserProfileData user) {
             Logger.Log($"Loading local scores for {user.User.Username}, ruleset: {user.Ruleset.ShortName}", level: LogLevel.Debug);
-            return await
-                Task.Run(() => {
-                    return user.User.Username == "Guest" ? ScoreManager.All(user.Ruleset) : ScoreManager.ByUsername(user.User.Username,user.Ruleset);
-                }).ConfigureAwait(false);
+            return await getScores(user).ConfigureAwait(false);
         }
+        private Task<List<ScoreInfo>> getScores(UserProfileData user){
+            return Task.Run(() => {
+                switch (type) {
+                    case ScoreType.Recent:
+                        return user.User.Username == "Guest" ? ScoreManager.Recent(user.Ruleset) : ScoreManager.Recent(user.Ruleset,user.User.Username);
+                    case ScoreType.Best:
+                    default:
+                        return user.User.Username == "Guest" ? ScoreManager.All(user.Ruleset) : ScoreManager.ByUsername(user.User.Username,user.Ruleset);
+
+                }});
+                }
 
         private int drawableItemIndex;
 
