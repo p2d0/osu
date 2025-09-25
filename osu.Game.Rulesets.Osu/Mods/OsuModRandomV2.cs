@@ -560,6 +560,8 @@ namespace osu.Game.Rulesets.Osu.Mods
                 };
 
                 circle.ApplyDefaults(osuBeatmap.ControlPointInfo, osuBeatmap.Difficulty);
+                var previousCircle = hitObjects.Count > 0 ? hitObjects[hitObjects.Count - 1] : null;
+                circle.UpdateComboInformation(previousCircle);
                 // circle.StartTime = firstTime + (beatLength * hitObjects.Count);
 
                 // Determine the start time for the new circle based on the previous one.
@@ -573,7 +575,6 @@ namespace osu.Game.Rulesets.Osu.Mods
                 else
                 {
                     // Get the previously placed circle.
-                    var previousCircle = hitObjects[hitObjects.Count - 1];
 
                     // The default next start time is one beatLength after the previous circle.
                     nextStartTime = previousCircle.StartTime + beatLength;
