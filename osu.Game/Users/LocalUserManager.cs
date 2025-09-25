@@ -36,7 +36,7 @@ namespace osu.Game.Users
                     CoverUrl = api.LocalUser.Value.CoverUrl,
                     Statistics = stats
                 };
-            return await GetLocalUserWithStatisticsUncached(ruleset);
+            return await GetLocalUserWithStatisticsUncached(ruleset).ConfigureAwait(false);
         }
 
         public static (float totalPp, float totalAccuracy) CalculateUserTotalPerformanceAggregates(IEnumerable<ScoreInfo> scores)
@@ -161,7 +161,7 @@ namespace osu.Game.Users
                         },
                     }
                 };
-            });
+            }).ConfigureAwait(false);
         }
     }
 }

@@ -77,7 +77,6 @@ using osu.Game.Seasonal;
 using osu.Game.Skinning;
 using osu.Game.Updater;
 using osu.Game.Users;
-using osu.Game.Scoring;
 using osu.Game.Online.API.Requests.Responses;
 using osuTK;
 using osuTK.Graphics;

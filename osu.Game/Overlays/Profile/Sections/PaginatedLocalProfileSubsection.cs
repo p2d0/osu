@@ -105,7 +105,7 @@ namespace osu.Game.Overlays.Profile.Sections
             if (e.NewValue?.User != null)
             {
                 Logger.Log("Creating taskResult", level: LogLevel.Debug);
-                taskResult = await CreateTask(User.Value);
+                taskResult = await CreateTask(User.Value).ConfigureAwait(false);
                 showMore();
                 SetCount(GetCount(e.NewValue.User));
             }
