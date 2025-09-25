@@ -102,6 +102,18 @@ namespace osu.Game.Scoring
                              .ToList().Detach());
         }
 
+        public List<ScoreInfo> Recent(RulesetInfo ruleset)
+        {
+            return Realm.Run(r => r.All<ScoreInfo>().Filter("PP != null && RankInt != -1 && ANY Files.Filename == 'replay.osr' && Ruleset.ShortName == $0  SORT(Date DESC) LIMIT(50)", ruleset.ShortName)
+                             .ToList().Detach());
+        }
+
+        public List<ScoreInfo> Recent(RulesetInfo ruleset, string username)
+        {
+            return Realm.Run(r => r.All<ScoreInfo>().Filter("RealmUser.Username == $0 && PP != null && RankInt != -1 && Ruleset.ShortName == $1 SORT(Date DESC) LIMIT(50)", username, ruleset.ShortName)
+                             .ToList().Detach());
+        }
+
         public List<ScoreInfo> All(RulesetInfo ruleset)
         {
             return Realm.Run(r => r.All<ScoreInfo>().Filter("PP != null && RankInt != -1 && ANY Files.Filename == 'replay.osr' && Ruleset.ShortName == $0  SORT(PP DESC) DISTINCT(BeatmapInfo.ID,BeatmapInfo.DifficultyName)", ruleset.ShortName)
