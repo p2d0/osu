@@ -78,7 +78,7 @@ namespace osu.Game.Users
             return ((float)totalPp, (float)totalAccuracy);
         }
 
-        private async Task<APIUser> GetLocalUserWithStatisticsUncached(RulesetInfo ruleset)
+        public async Task<APIUser> GetLocalUserWithStatisticsUncached(RulesetInfo ruleset)
         {
             return await Task.Run(() =>
             {
