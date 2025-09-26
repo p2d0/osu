@@ -148,19 +148,19 @@ namespace osu.Game.Rulesets.Osu.Mods
         public Bindable<bool>  SquareModBreak { get; } = new BindableBool(false);
 
         [SettingSource("Break interval", "Break every x objects", IsVisible = nameof(SquareModBreak))]
-        public BindableInt SquareModBreakInterval { get; } = new BindableInt(50)
+        public BindableInt SquareModBreakInterval { get; } = new BindableInt(100)
             {
                 MinValue = 10,
                 MaxValue = 500,
                 Default = 100,
             };
 
-        [SettingSource("Break duration", "Break time ms?", IsVisible = nameof(SquareModBreak))]
-        public BindableInt SquareModBreakTime { get; } = new BindableInt(50)
+        [SettingSource("Break duration (in hitobjects)", "Break for x circles", IsVisible = nameof(SquareModBreak))]
+        public BindableInt SquareModBreakObjects { get; } = new BindableInt(25)
             {
-                MinValue = 500,
-                MaxValue = 5000,
-                Default = 500,
+                MinValue = 10,
+                MaxValue = 100,
+                Default = 25,
             };
 
         [SettingSource("Hard random", "Remove circle padding and unnecessary shifting")]
@@ -585,7 +585,7 @@ namespace osu.Game.Rulesets.Osu.Mods
                     if (SquareModBreak.Value && hitObjects.Count % SquareModBreakInterval.Value == 0)
                     {
                         // Add the extra break time to the sequentially calculated time.
-                        nextStartTime += SquareModBreakTime.Value;
+                        nextStartTime += beatLength * SquareModBreakObjects.Value;
                     }
                 }
 
