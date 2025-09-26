@@ -23,6 +23,8 @@ using osu.Framework.Extensions.ObjectExtensions;
 using osu.Framework.Input.StateChanges;
 using osu.Framework.Extensions.IEnumerableExtensions;
 using osu.Framework.Graphics.Containers;
+using osu.Game.Graphics.UserInterface;
+using osu.Game.Overlays.Settings;
 
 namespace osu.Game.Rulesets.Osu.Mods
 {
@@ -161,6 +163,27 @@ namespace osu.Game.Rulesets.Osu.Mods
                 MinValue = 10,
                 MaxValue = 100,
                 Default = 25,
+            };
+
+        [SettingSource("Full map?", "Full map or just a part", IsVisible = nameof(SquareMod))]
+        public Bindable<bool>  SquareModFullMap { get; } = new BindableBool(true);
+
+        [SettingSource("Offset (in circles)", "Offset in circles", IsHidden = nameof(SquareModFullMap))]
+        public BindableInt SquareModeOffset { get; } = new BindableInt(0)
+            {
+                MinValue = 0,
+                MaxValue = 5000,
+                Precision = 50,
+                Default = 0,
+            };
+
+        [SettingSource("Hitobjects count", "How many circles", IsHidden = nameof(SquareModFullMap), SettingControlType = typeof(SettingsSlider<int, SquareModObjectCountSliderBar>))]
+        public BindableInt SquareModCount { get; } = new BindableInt(0)
+            {
+                MinValue = 0,
+                MaxValue = 5000,
+                Precision = 100,
+                Default = 0,
             };
 
         [SettingSource("Hard random", "Remove circle padding and unnecessary shifting")]
@@ -516,6 +539,11 @@ namespace osu.Game.Rulesets.Osu.Mods
 
             var firstTime = firstHitObject.StartTime;
 
+            if(!SquareModFullMap.Value)
+                firstTime += SquareModeOffset.Value * (osuBeatmap.ControlPointInfo.TimingPointAt(firstTime).BeatLength / SquareModDivisor.Value);
+            else
+                Logger.Log("Making full map");
+
             var hitObjects = new List<OsuHitObject>();
 
 
@@ -596,6 +624,9 @@ namespace osu.Game.Rulesets.Osu.Mods
                 // if(osuBeatmap.ControlPointInfo.TimingPointAt(circle.StartTime).BeatLength / 2 > 5)
                 //     beatLength = osuBeatmap.ControlPointInfo.TimingPointAt(circle.StartTime).BeatLength / 2;
                 hitObjects.Add(circle);
+                if(!SquareModFullMap.Value && SquareModCount.Value > 0)
+                    if(hitObjects.Count > SquareModCount.Value)
+                        break;
             } while (hitObjects.Last().StartTime < lastTime);
 
             osuBeatmap.HitObjects = hitObjects;
@@ -604,5 +635,10 @@ namespace osu.Game.Rulesets.Osu.Mods
             Logger.Log($"Breaks: {beatmap.Breaks.Count}");
             Logger.Log($"TotalBreakTime: {beatmap.TotalBreakTime}ms" );
         }
+    }
+
+    public partial class SquareModObjectCountSliderBar : RoundedSliderBar<int>
+    {
+        public override LocalisableString TooltipText => Current.Value == 0 ? "No limit" : base.TooltipText;
     }
 }
