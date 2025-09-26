@@ -125,10 +125,10 @@ namespace osu.Game.Rulesets.Osu.Mods
         // [SettingSource("Infinite playarea", "Infinite playarea")]
         public Bindable<bool> InfinitePlayArea { get; } = new BindableBool(false);
 
-        [SettingSource("SquareMod", "SquareMod")]
+        [SettingSource("Generate circles", "Generate hit circles in a square pattern")]
         public Bindable<bool> SquareMod { get; } = new BindableBool(false);
 
-        [SettingSource("SquareModDivisor", "Divisor selector", IsVisible = nameof(SquareMod))]
+        [SettingSource("Divisor", "Divisor selector", IsVisible = nameof(SquareMod))]
         public BindableInt SquareModDivisor { get; } = new BindableInt(2)
             {
                 MinValue = 1,
@@ -136,7 +136,7 @@ namespace osu.Game.Rulesets.Osu.Mods
                 Default = 2,
             };
 
-        [SettingSource("SquareModDistance", "Distance", IsVisible = nameof(SquareMod))]
+        [SettingSource("Distance", "Distance", IsVisible = nameof(SquareMod))]
         public BindableInt SquareModDistance { get; } = new BindableInt(50)
             {
                 MinValue = 1,
@@ -144,10 +144,10 @@ namespace osu.Game.Rulesets.Osu.Mods
                 Default = 50
             };
 
-        [SettingSource("SquareModBreak", "Add breaks", IsVisible = nameof(SquareMod))]
+        [SettingSource("Include breaks?", "Add breaks", IsVisible = nameof(SquareMod))]
         public Bindable<bool>  SquareModBreak { get; } = new BindableBool(false);
 
-        [SettingSource("SquareModBreakInterval", "Break every x objects", IsVisible = nameof(SquareModBreak))]
+        [SettingSource("Break interval", "Break every x objects", IsVisible = nameof(SquareModBreak))]
         public BindableInt SquareModBreakInterval { get; } = new BindableInt(50)
             {
                 MinValue = 10,
@@ -155,7 +155,7 @@ namespace osu.Game.Rulesets.Osu.Mods
                 Default = 100,
             };
 
-        [SettingSource("SquareModBreakTime", "Break time ms?", IsVisible = nameof(SquareModBreak))]
+        [SettingSource("Break duration", "Break time ms?", IsVisible = nameof(SquareModBreak))]
         public BindableInt SquareModBreakTime { get; } = new BindableInt(50)
             {
                 MinValue = 500,
