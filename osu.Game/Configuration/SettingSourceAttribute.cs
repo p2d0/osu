@@ -121,23 +121,6 @@ namespace osu.Game.Configuration
             {
                 object value = property.GetValue(obj)!;
 
-                if (attr.SettingControlType != null)
-                {
-                    var controlType = attr.SettingControlType;
-                    if (controlType.EnumerateBaseTypes().All(t => !t.IsGenericType || t.GetGenericTypeDefinition() != typeof(SettingsItem<>)))
-                        throw new InvalidOperationException($"{nameof(SettingSourceAttribute)} had an unsupported custom control type ({controlType.ReadableName()})");
-
-                    var control = (Drawable)Activator.CreateInstance(controlType)!;
-                    controlType.GetProperty(nameof(SettingsItem<object>.SettingSourceObject))?.SetValue(control, obj);
-                    controlType.GetProperty(nameof(SettingsItem<object>.LabelText))?.SetValue(control, attr.Label);
-                    controlType.GetProperty(nameof(SettingsItem<object>.TooltipText))?.SetValue(control, attr.Description);
-                    controlType.GetProperty(nameof(SettingsItem<object>.Current))?.SetValue(control, value);
-
-                    yield return control;
-
-                    continue;
-                }
-
                 // Handle CanBeShown logic
                 Bindable<bool>? IsHiddenBindable = null;
                 if (attr.IsHidden != null)
@@ -171,6 +154,34 @@ namespace osu.Game.Configuration
                         }
                     }
                 }
+
+                if (attr.SettingControlType != null)
+                {
+                    var controlType = attr.SettingControlType;
+                    if (controlType.EnumerateBaseTypes().All(t => !t.IsGenericType || t.GetGenericTypeDefinition() != typeof(SettingsItem<>)))
+                        throw new InvalidOperationException($"{nameof(SettingSourceAttribute)} had an unsupported custom control type ({controlType.ReadableName()})");
+
+                    var control = (Drawable)Activator.CreateInstance(controlType)!;
+                    controlType.GetProperty(nameof(SettingsItem<object>.SettingSourceObject))?.SetValue(control, obj);
+                    controlType.GetProperty(nameof(SettingsItem<object>.LabelText))?.SetValue(control, attr.Label);
+                    controlType.GetProperty(nameof(SettingsItem<object>.TooltipText))?.SetValue(control, attr.Description);
+                    controlType.GetProperty(nameof(SettingsItem<object>.Current))?.SetValue(control, value);
+                    if(IsHiddenBindable != null){
+                        if(controlType.GetProperty(nameof(SettingsDropdown<object>.IsHidden))?.GetValue(control) is Bindable<bool> isHidden)
+                            isHidden.BindTo(IsHiddenBindable);
+                    }
+
+                    if(IsVisibleBindable != null){
+                        if(controlType.GetProperty(nameof(SettingsDropdown<object>.IsVisible))?.GetValue(control) is Bindable<bool> isVisible)
+                            isVisible.BindTo(IsVisibleBindable);
+                    }
+
+
+                    yield return control;
+
+                    continue;
+                }
+
 
                 switch (value)
                 {
