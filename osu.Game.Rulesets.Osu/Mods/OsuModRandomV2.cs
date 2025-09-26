@@ -519,7 +519,6 @@ namespace osu.Game.Rulesets.Osu.Mods
             var hitObjects = new List<OsuHitObject>();
 
 
-            var beatLength = osuBeatmap.ControlPointInfo.TimingPointAt(firstTime).BeatLength / SquareModDivisor.Value;
 
             // if (beatLength <= 0) // Add a safeguard against division by zero or invalid timing points
             //     beatLength = 200;
@@ -577,6 +576,8 @@ namespace osu.Game.Rulesets.Osu.Mods
                     // Get the previously placed circle.
 
                     // The default next start time is one beatLength after the previous circle.
+
+                    var beatLength = osuBeatmap.ControlPointInfo.TimingPointAt(previousCircle.StartTime).BeatLength / SquareModDivisor.Value;
                     nextStartTime = previousCircle.StartTime + beatLength;
 
                     // Check if we need to add a break.
