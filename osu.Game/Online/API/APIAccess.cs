@@ -105,6 +105,7 @@ namespace osu.Game.Online.API
             log.Add($@"API request version: {APIVersion}");
 
             ProvidedUsername = config.Get<string>(OsuSetting.Username);
+            setLocalUser(ProvidedUsername);
 
             authentication.TokenString = config.Get<string>(OsuSetting.Token);
             authentication.Token.ValueChanged += onTokenChanged;
@@ -120,6 +121,7 @@ namespace osu.Game.Online.API
                 // This is required so that Queue() requests during startup sequence don't fail due to "not logged in".
                 state.Value = APIState.Connecting;
             }
+
 
             var thread = new Thread(run)
             {
@@ -404,6 +406,7 @@ namespace osu.Game.Online.API
             {
                 Username = username,
             };
+            config.SetValue(OsuSetting.Username, config.Get<bool>(OsuSetting.SaveUsername) ? username : string.Empty);
             localUser.TriggerChange();
         }
 
@@ -736,6 +739,7 @@ namespace osu.Game.Online.API
     {
         public GuestUser()
         {
+
             Username = @"Guest";
             Id = SYSTEM_USER_ID;
         }
