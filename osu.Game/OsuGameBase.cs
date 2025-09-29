@@ -203,7 +203,7 @@ namespace osu.Game
         /// </summary>
         public readonly Bindable<Dictionary<ModType, IReadOnlyList<Mod>>> AvailableMods = new Bindable<Dictionary<ModType, IReadOnlyList<Mod>>>(new Dictionary<ModType, IReadOnlyList<Mod>>());
 
-        private BeatmapDifficultyCache difficultyCache;
+        protected BeatmapDifficultyCache difficultyCache;
         private IBeatmapUpdater beatmapUpdater;
 
         private UserLookupCache userCache;

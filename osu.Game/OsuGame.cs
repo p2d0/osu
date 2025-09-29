@@ -59,6 +59,7 @@ using osu.Game.Overlays.SkinEditor;
 using osu.Game.Overlays.Toolbar;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Scoring;
+using osu.Game.Utils;
 using osu.Game.Scoring.Legacy;
 using osu.Game.Screens;
 using osu.Game.Screens.Edit;
@@ -76,12 +77,14 @@ using osu.Game.Seasonal;
 using osu.Game.Skinning;
 using osu.Game.Updater;
 using osu.Game.Users;
-using osu.Game.Utils;
+using osu.Game.Online.API.Requests.Responses;
 using osuTK;
 using osuTK.Graphics;
 using Sentry;
 using IntroScreen = osu.Game.Screens.Menu.IntroScreen;
 using MatchType = osu.Game.Online.Rooms.MatchType;
+using osu.Game.Models;
+using osu.Game.Rulesets;
 
 namespace osu.Game
 {
@@ -593,6 +596,12 @@ namespace osu.Game
         /// </summary>
         /// <param name="user">The user to display.</param>
         public void ShowUser(IUser user) => waitForReady(() => userProfile, _ => userProfile.ShowUser(user));
+
+        /// <summary>
+        /// Show a user's profile as an overlay.
+        /// </summary>
+        /// <param name="user">The user to display.</param>
+        public void ShowUser(IUser user, IRulesetInfo ruleset) => waitForReady(() => userProfile, _ => userProfile.ShowUser(user, ruleset));
 
         /// <summary>
         /// Show a beatmap's set as an overlay, displaying the given beatmap.
@@ -1202,6 +1211,12 @@ namespace osu.Game
             LocalUserStatisticsProvider statisticsProvider;
 
             loadComponentSingleFile(statisticsProvider = new LocalUserStatisticsProvider(), Add, true);
+            statisticsProvider.localUser.BindTo(API.LocalUser);
+
+            LocalUserManager localUserManager;
+
+            dependencies.Cache(localUserManager = new LocalUserManager(ScoreManager, API, statisticsProvider));
+
             loadComponentSingleFile(difficultyRecommender = new DifficultyRecommender(statisticsProvider), Add, true);
             loadComponentSingleFile(new UserStatisticsWatcher(statisticsProvider), Add, true);
             loadComponentSingleFile(Toolbar = new Toolbar
@@ -1583,7 +1598,7 @@ namespace osu.Game
                     if (userProfile.State.Value == Visibility.Visible)
                         userProfile.Hide();
                     else
-                        ShowUser(API.LocalUser.Value);
+                        ShowUser(API.LocalUser.Value, Ruleset.Value);
                     return true;
 
                 case GlobalAction.RandomSkin:

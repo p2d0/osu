@@ -1,7 +1,8 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using osu.Framework.Allocation;
@@ -26,17 +27,20 @@ using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Overlays.Profile;
 using osu.Game.Overlays.Profile.Sections;
 using osu.Game.Rulesets;
+using osu.Game.Scoring;
 using osu.Game.Users;
 using osuTK;
 using osuTK.Graphics;
+using osu.Framework.Logging;
+using System.Threading.Tasks;
 
 namespace osu.Game.Overlays
 {
     public partial class UserProfileOverlay : FullscreenOverlay<ProfileHeader>
     {
-        protected override Container<Drawable> Content => onlineViewContainer;
+        // protected override Container<Drawable> Content => onlineViewContainer;
 
-        private readonly OnlineViewContainer onlineViewContainer;
+        // private readonly OnlineViewContainer onlineViewContainer;
         private readonly LoadingLayer loadingLayer;
 
         private ProfileSection? lastSection;
@@ -44,6 +48,12 @@ namespace osu.Game.Overlays
         private GetUserRequest? userReq;
         private ProfileSectionsContainer? sectionsContainer;
         private ProfileSectionTabControl? tabs;
+
+        [Resolved]
+        private ScoreManager ScoreManager { get; set; } = null!;
+
+        [Resolved]
+        private LocalUserManager localUserManager { get; set; } = null!;
 
         private IUser? user;
         private IRulesetInfo? ruleset;
@@ -61,10 +71,10 @@ namespace osu.Game.Overlays
                 RelativeSizeAxes = Axes.Both,
                 Children = new Drawable[]
                 {
-                    onlineViewContainer = new OnlineViewContainer($"Sign in to view the {Header.Title.Title}")
-                    {
-                        RelativeSizeAxes = Axes.Both
-                    },
+                    // onlineViewContainer = new OnlineViewContainer($"Sign in to view the {Header.Title.Title}")
+                    // {
+                    //     RelativeSizeAxes = Axes.Both
+                    // },
                     loadingLayer = new LoadingLayer(true)
                 }
             });
@@ -87,23 +97,88 @@ namespace osu.Game.Overlays
 
         public void ShowUser(IUser userToShow, IRulesetInfo? userRuleset = null)
         {
-            if (userToShow.OnlineID == APIUser.SYSTEM_USER_ID)
-                return;
 
             user = userToShow;
             ruleset = userRuleset;
 
             Show();
-            Scheduler.AddOnce(fetchAndSetContent);
+            if (userToShow.OnlineID == APIUser.SYSTEM_USER_ID)
+                Scheduler.AddOnce(fetchAndSetContentForLocalUser);
+            else
+                Scheduler.AddOnce(fetchAndSetContent);
         }
+
+        // public void ShowLocalUser(APIUser user, IRulesetInfo? userRuleset = null)
+        // {
+        //     this.user = user;
+        //     ruleset = userRuleset;
+        //     Show();
+        //     Logger.Log($"Showingthe window");
+        //     loadingLayer.Show();
+        //     Scheduler.AddOnce(() => fetchAndSetContentForLocalUser(user));
+        // }
+
+        private async void fetchAndSetContentForLocalUser()
+        {
+            if (sectionsContainer != null)
+            {
+                sectionsContainer.ExpandableHeader = null;
+            }
+
+            userReq?.Cancel();
+            lastSection = null;
+
+
+            // int profileHue = OverlayColourScheme.Pink.GetHue();
+            // changeOverlayColours(profileHue);
+            recreateBaseContent();
+
+            Debug.Assert(sectionsContainer != null && tabs != null);
+
+            try
+            {
+                loadingLayer.Show();
+
+                var actualRuleset = rulesets.GetRuleset(ruleset?.ShortName ?? @"osu").AsNonNull();
+                // var scores = await
+                //     Task.Run(() => {
+                //         return user.Username == "Guest" ? ScoreManager.All(actualRuleset) : ScoreManager.ByUsername(user.Username,actualRuleset);
+                //     });
+
+                var userWithStats = await localUserManager.GetLocalUserWithStatisticsAsync(actualRuleset).ConfigureAwait(false);
+
+                var userProfileData = new UserProfileData(userWithStats, actualRuleset);
+
+                // This runs on main thread automatically
+                var localRanks = new LocalRanksSection();
+                sections = new ProfileSection[] { localRanks };
+                Header.User.Value = userProfileData;
+
+                foreach (var sec in sections)
+                {
+                    sec.User.Value = userProfileData;
+                    sectionsContainer.Add(sec);
+                    tabs.AddItem(sec);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed to load local user data");
+            }
+            finally
+            {
+                loadingLayer.Hide();
+            }
+        }
+
 
         private void fetchAndSetContent()
         {
             Debug.Assert(user != null);
 
-            bool sameUser = user.OnlineID == Header.User.Value?.User.Id;
-            if (sameUser && ruleset?.MatchesOnlineID(Header.User.Value?.Ruleset) == true)
-                return;
+            // bool sameUser = user.OnlineID == Header.User.Value?.User.Id;
+            // if (sameUser && ruleset?.MatchesOnlineID(Header.User.Value?.Ruleset) == true)
+            //     return;
 
             if (sectionsContainer != null)
                 sectionsContainer.ExpandableHeader = null;
@@ -124,8 +199,8 @@ namespace osu.Game.Overlays
                 }
                 : Array.Empty<ProfileSection>();
 
-            if (!sameUser)
-                changeOverlayColours(OverlayColourScheme.Pink.GetHue());
+            // if (!sameUser)
+            //     changeOverlayColours(OverlayColourScheme.Pink.GetHue());
 
             recreateBaseContent();
 

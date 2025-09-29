@@ -15,11 +15,13 @@ using osu.Game.Beatmaps;
 using osu.Game.Configuration;
 using osu.Game.Database;
 using osu.Game.IO.Archives;
+using osu.Game.Models;
 using osu.Game.Online.API;
 using osu.Game.Overlays.Notifications;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Scoring.Legacy;
+using Realms;
 
 namespace osu.Game.Scoring
 {
@@ -82,6 +84,40 @@ namespace osu.Game.Scoring
         public ScoreInfo? Query(Expression<Func<ScoreInfo, bool>> query)
         {
             return Realm.Run(r => r.All<ScoreInfo>().FirstOrDefault(query)?.Detach());
+        }
+
+        /// <summary>
+        /// Perform a lookup query on available <see cref="ScoreInfo"/>s.
+        /// </summary>
+        /// <param name="query">The query.</param>
+        /// <returns>The results for the provided query in their detached form.</returns>
+        public List<ScoreInfo> QueryScores(Expression<Func<ScoreInfo, bool>> query)
+        {
+            return Realm.Run(r => r.All<ScoreInfo>().Where(query).ToList().Detach());
+        }
+
+        public List<ScoreInfo> ByUsername(string username, RulesetInfo ruleset)
+        {
+            return Realm.Run(r => r.All<ScoreInfo>().Filter("RealmUser.Username == $0 && PP != null && RankInt != -1 && Ruleset.ShortName == $1 SORT(PP DESC) DISTINCT(BeatmapInfo.ID,BeatmapInfo.DifficultyName)", username, ruleset.ShortName)
+                             .ToList().Detach());
+        }
+
+        public List<ScoreInfo> Recent(RulesetInfo ruleset)
+        {
+            return Realm.Run(r => r.All<ScoreInfo>().Filter("PP != null && RankInt != -1 && ANY Files.Filename == 'replay.osr' && Ruleset.ShortName == $0  SORT(Date DESC) LIMIT(50)", ruleset.ShortName)
+                             .ToList().Detach());
+        }
+
+        public List<ScoreInfo> Recent(RulesetInfo ruleset, string username)
+        {
+            return Realm.Run(r => r.All<ScoreInfo>().Filter("RealmUser.Username == $0 && PP != null && RankInt != -1 && Ruleset.ShortName == $1 SORT(Date DESC) LIMIT(50)", username, ruleset.ShortName)
+                             .ToList().Detach());
+        }
+
+        public List<ScoreInfo> All(RulesetInfo ruleset)
+        {
+            return Realm.Run(r => r.All<ScoreInfo>().Filter("PP != null && RankInt != -1 && ANY Files.Filename == 'replay.osr' && Ruleset.ShortName == $0  SORT(PP DESC) DISTINCT(BeatmapInfo.ID,BeatmapInfo.DifficultyName)", ruleset.ShortName)
+                             .ToList().Detach());
         }
 
         private ScoreInfo? getDatabasedScoreInfo(IScoreInfo originalScoreInfo)
