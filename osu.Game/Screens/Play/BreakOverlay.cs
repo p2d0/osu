@@ -10,10 +10,13 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Effects;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.UserInterface;
+using osu.Framework.Input.Bindings;
+using osu.Framework.Input.Events;
 using osu.Game.Beatmaps.ControlPoints;
 using osu.Game.Beatmaps.Timing;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
+using osu.Game.Input.Bindings;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Scoring;
 using osu.Game.Screens.Play.Break;
@@ -22,7 +25,7 @@ using osuTK;
 
 namespace osu.Game.Screens.Play
 {
-    public partial class BreakOverlay : BeatSyncedContainer
+    public partial class BreakOverlay : BeatSyncedContainer, IKeyBindingHandler<GlobalAction>
     {
         /// <summary>
         /// The duration of the break overlay fading.
@@ -219,6 +222,25 @@ namespace osu.Game.Screens.Play
                     skipButton.Hide();
                 }
             }
+        }
+
+        public bool OnPressed(KeyBindingPressEvent<GlobalAction> e)
+        {
+            if (e.Repeat || currentPeriod.Value == null)
+                return false;
+
+            switch (e.Action)
+            {
+                case GlobalAction.SkipCutscene:
+                    skipButton.TriggerClick();
+                    return true;
+            }
+
+            return false;
+        }
+
+        public void OnReleased(KeyBindingReleaseEvent<GlobalAction> e)
+        {
         }
     }
 }
