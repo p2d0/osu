@@ -152,15 +152,15 @@ namespace osu.Game.Rulesets.Osu.Mods
         [SettingSource("Break interval", "Break every x objects", IsVisible = nameof(SquareModBreak))]
         public BindableInt SquareModBreakInterval { get; } = new BindableInt(100)
             {
-                MinValue = 10,
+                MinValue = 1,
                 MaxValue = 500,
                 Default = 100,
             };
 
-        [SettingSource("Break duration (in hitobjects)", "Break for x circles", IsVisible = nameof(SquareModBreak))]
+        [SettingSource("Break duration (in hitobjects)", "Break for x circles", IsVisible = nameof(SquareMod))]
         public BindableInt SquareModBreakObjects { get; } = new BindableInt(25)
             {
-                MinValue = 10,
+                MinValue = 1,
                 MaxValue = 100,
                 Default = 25,
             };
@@ -185,6 +185,9 @@ namespace osu.Game.Rulesets.Osu.Mods
                 Precision = 100,
                 Default = 0,
             };
+
+        [SettingSource("Increasing?", "3 then 6 then 9 circles ec", IsVisible = nameof(SquareMod))]
+        public Bindable<bool>  SquareModIncreasing { get; } = new BindableBool(false);
 
         [SettingSource("Hard random", "Remove circle padding and unnecessary shifting")]
         public Bindable<bool> Hardcore { get; } = new BindableBool(true);
@@ -523,12 +526,11 @@ namespace osu.Game.Rulesets.Osu.Mods
             return previousObjectStartedCombo && random.NextDouble() < 0.6f;
         }
 
-        private void makeMapSquare(IBeatmap beatmap){
+        private void makeMapSquare(IBeatmap beatmap)
+        {
             // The 'is' pattern matching already declares and assigns osuBeatmap if the cast is successful.
-
             if (beatmap is not OsuBeatmap osuBeatmap)
                 return;
-
 
             var firstHitObject = beatmap.HitObjects.OfType<OsuHitObject>().FirstOrDefault();
             if (firstHitObject == null)
@@ -536,22 +538,20 @@ namespace osu.Game.Rulesets.Osu.Mods
 
             // The original code had a redundant LastOrDefault check.
             var lastTime = beatmap.HitObjects.Last().StartTime;
-
             var firstTime = firstHitObject.StartTime;
 
-            if(!SquareModFullMap.Value)
+            if (!SquareModFullMap.Value)
                 firstTime += SquareModeOffset.Value * (osuBeatmap.ControlPointInfo.TimingPointAt(firstTime).BeatLength / SquareModDivisor.Value);
             else
                 Logger.Log("Making full map");
 
             var hitObjects = new List<OsuHitObject>();
-
-
-
-            // if (beatLength <= 0) // Add a safeguard against division by zero or invalid timing points
-            //     beatLength = 200;
-
             var spacing = SquareModDistance.Value; // The side length of the square
+
+            // Variables for the increasing break logic
+            int circlesSinceLastBreak = 0;
+            int breakInterval = 3; // Start with 3 circles before the first break
+            const int breakIncreaseAmount = 1; // Increase the interval by 3 each time
 
             do
             {
@@ -589,7 +589,6 @@ namespace osu.Game.Rulesets.Osu.Mods
                 circle.ApplyDefaults(osuBeatmap.ControlPointInfo, osuBeatmap.Difficulty);
                 var previousCircle = hitObjects.Count > 0 ? hitObjects[hitObjects.Count - 1] : null;
                 circle.UpdateComboInformation(previousCircle);
-                // circle.StartTime = firstTime + (beatLength * hitObjects.Count);
 
                 // Determine the start time for the new circle based on the previous one.
                 double nextStartTime;
@@ -602,17 +601,27 @@ namespace osu.Game.Rulesets.Osu.Mods
                 else
                 {
                     // Get the previously placed circle.
-
-                    // The default next start time is one beatLength after the previous circle.
-
                     var beatLength = osuBeatmap.ControlPointInfo.TimingPointAt(previousCircle.StartTime).BeatLength / SquareModDivisor.Value;
+                    // The default next start time is one beatLength after the previous circle.
                     nextStartTime = previousCircle.StartTime + beatLength;
 
-                    // Check if we need to add a break.
-                    // We use the count *before* adding the new object.
-                    if (SquareModBreak.Value && hitObjects.Count % SquareModBreakInterval.Value == 0)
+                    // --- MODIFIED BREAK LOGIC ---
+                    if (SquareModIncreasing.Value)
                     {
-                        // Add the extra break time to the sequentially calculated time.
+                        // Check if the number of circles placed since the last break has reached the current interval.
+                        if (circlesSinceLastBreak >= breakInterval)
+                        {
+                            // Add the extra break time. Assuming '3 circles' break means using SquareModBreakObjects.
+                            nextStartTime += beatLength * SquareModBreakObjects.Value;
+                            // Increase the interval for the next break.
+                            breakInterval += breakIncreaseAmount;
+                            // Reset the counter.
+                            circlesSinceLastBreak = 0;
+                        }
+                    }
+                    // Fallback to the original, consistent break logic if increasing mode is off.
+                    else if (SquareModBreak.Value && hitObjects.Count % SquareModBreakInterval.Value == 0)
+                    {
                         nextStartTime += beatLength * SquareModBreakObjects.Value;
                     }
                 }
@@ -621,19 +630,25 @@ namespace osu.Game.Rulesets.Osu.Mods
                 circle.StartTime = osuBeatmap.ControlPointInfo.GetClosestSnappedTime(nextStartTime);
                 circle.TimePreempt = firstHitObject.TimePreempt;
                 circle.TimeFadeIn = firstHitObject.TimeFadeIn;
-                // if(osuBeatmap.ControlPointInfo.TimingPointAt(circle.StartTime).BeatLength / 2 > 5)
-                //     beatLength = osuBeatmap.ControlPointInfo.TimingPointAt(circle.StartTime).BeatLength / 2;
+
                 hitObjects.Add(circle);
-                if(!SquareModFullMap.Value && SquareModCount.Value > 0)
-                    if(hitObjects.Count > SquareModCount.Value)
-                        break;
+
+                // Increment the counter for the increasing break logic after adding the circle.
+                if (SquareModIncreasing.Value)
+                {
+                    circlesSinceLastBreak++;
+                }
+
+                if (!SquareModFullMap.Value && SquareModCount.Value > 0 && hitObjects.Count > SquareModCount.Value)
+                    break;
+
             } while (hitObjects.Last().StartTime < lastTime);
 
             osuBeatmap.HitObjects = hitObjects;
 
             beatmap.Breaks.Clear();
             Logger.Log($"Breaks: {beatmap.Breaks.Count}");
-            Logger.Log($"TotalBreakTime: {beatmap.TotalBreakTime}ms" );
+            Logger.Log($"TotalBreakTime: {beatmap.TotalBreakTime}ms");
         }
     }
 
