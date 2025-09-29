@@ -156,6 +156,7 @@ namespace osu.Game.Rulesets.Osu.Mods
                 MaxValue = 500,
                 Default = 100,
             };
+        // TEST
 
         [SettingSource("Break duration (in hitobjects)", "Break for x circles", IsVisible = nameof(SquareMod))]
         public BindableInt SquareModBreakObjects { get; } = new BindableInt(25)
