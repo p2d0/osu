@@ -180,6 +180,7 @@ namespace osu.Game.Screens.Play
         public readonly PlayerConfiguration Configuration;
 
         /// <summary>
+
         /// The score for the current play session.
         /// Available only after the player is loaded.
         /// </summary>
@@ -497,6 +498,11 @@ namespace osu.Game.Screens.Play
                         Clock = DrawableRuleset.FrameStableClock,
                         ProcessCustomClock = false,
                         BreakTracker = breakTracker,
+                        RequestSkip = () =>
+                        {
+                            if (breakTracker.CurrentPeriod.Value.HasValue)
+                                GameplayClockContainer.Seek(breakTracker.CurrentPeriod.Value.Value.End);
+                        }
                     },
                     // display the cursor above some HUD elements.
                     DrawableRuleset.Cursor?.CreateProxy() ?? new Container(),
