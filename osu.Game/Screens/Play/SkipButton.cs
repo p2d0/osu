@@ -33,7 +33,7 @@ namespace osu.Game.Screens.Play
 
         public SkipButton()
         {
-            RelativeSizeAxes = Axes.X;
+            RelativeSizeAxes = Axes.Both;
         }
 
         [BackgroundDependencyLoader]

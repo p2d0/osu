@@ -131,6 +131,8 @@ namespace osu.Game.Screens.Play
                     {
                         Anchor = Anchor.Centre,
                         Origin = Anchor.Centre,
+
+                        RelativeSizeAxes = Axes.X,
                         // Position = new Vector2(0.5f, 0.7f),
                         Y = vertical_margin * 10,
                         Size = new Vector2(1, 100),
