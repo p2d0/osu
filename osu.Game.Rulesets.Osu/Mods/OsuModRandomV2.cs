@@ -285,7 +285,7 @@ namespace osu.Game.Rulesets.Osu.Mods
                 }
                 if (shouldStartNewSection(osuBeatmap, positionInfos, i))
                 {
-                    sectionOffset = isStream(osuBeatmap, positionInfos,i, originalDistance) ? getRandomOffsetStream(0.008f) : getRandomOffset(0.0008f);
+                    sectionOffset = isStream(osuBeatmap, positionInfos,i, originalDistance) ? getRandomOffsetStream(0.002f) : getRandomOffset(0.002f);
                     flowDirection = !flowDirection;
                 }
 
