@@ -503,6 +503,8 @@ namespace osu.Game.Rulesets.Osu.Mods
         /// <returns>Whether a new section should be started at the current <see cref="OsuHitObject"/>.</returns>
         private bool shouldStartNewSection(OsuBeatmap beatmap, IReadOnlyList<OsuHitObjectGenerationUtils.ObjectPositionInfo> positionInfos, int i)
         {
+            if(CustomAngle.Value)
+                return false;
             if (i == 0)
                 return true;
 
