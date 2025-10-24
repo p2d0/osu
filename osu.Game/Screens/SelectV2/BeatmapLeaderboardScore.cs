@@ -42,6 +42,7 @@ using osu.Game.Utils;
 using osuTK;
 using osuTK.Graphics;
 using CommonStrings = osu.Game.Localisation.CommonStrings;
+using osu.Framework.Extensions;
 
 namespace osu.Game.Screens.SelectV2
 {
@@ -77,6 +78,9 @@ namespace osu.Game.Screens.SelectV2
 
         [Resolved]
         private BeatmapManager beatmapManager { get; set; } = null!;
+
+        [Resolved]
+        private BeatmapDifficultyCache difficultyCache { get; set; } = null!;
 
         [Resolved]
         private OsuConfigManager config { get; set; } = null!;
@@ -153,8 +157,8 @@ namespace osu.Game.Screens.SelectV2
             totalScoreBackgroundGradient = ColourInfo.GradientHorizontal(backgroundColour.Opacity(0), backgroundColour);
 
             var ruleset = Score.BeatmapInfo.Ruleset.CreateInstance();
-            var beatmap = beatmapManager.GetWorkingBeatmap(Score.BeatmapInfo);
-            var starRating = ruleset.CreateDifficultyCalculator(beatmap).Calculate(Score.Mods).StarRating;
+            StarDifficulty starDifficulty = new StarDifficulty(Score.BeatmapInfo.StarRating, 0);
+            starDifficulty = difficultyCache.GetDifficultyAsync(Score.BeatmapInfo, Score.Ruleset, Score.Mods).GetResultSafely() ?? starDifficulty;
 
             Child = new Container
             {
@@ -450,7 +454,7 @@ namespace osu.Game.Screens.SelectV2
                                                         Anchor = Anchor.TopRight,
                                                         Origin = Anchor.TopRight,
                                                         Children = new Drawable[] {
-                                                            new StarRatingDisplay(new StarDifficulty(starRating,Score.MaxCombo),StarRatingDisplaySize.Small, animated: true)
+                                                            new StarRatingDisplay(starDifficulty,StarRatingDisplaySize.Small, animated: true)
                                                             {
                                                                 // Margin = new MarginPadding { Vertical = 5 },
                                                                 // Anchor = Anchor.TopRight,
