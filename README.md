@@ -1,3 +1,10 @@
+# Experimental rebased 2025-10-27
+ - Local PP
+ - Skip breaks
+ - ModRandomV2
+ - Merged mods NoSliding and SpacingAdjust
+ - Show star rating on leaderboards
+ 
 <p align="center">
   <img width="500" alt="osu! logo" src="assets/lazer.png">
 </p>
