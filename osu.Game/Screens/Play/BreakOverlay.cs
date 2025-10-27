@@ -10,18 +10,22 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Effects;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.UserInterface;
+using osu.Framework.Input.Bindings;
+using osu.Framework.Input.Events;
 using osu.Game.Beatmaps.ControlPoints;
 using osu.Game.Beatmaps.Timing;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
+using osu.Game.Input.Bindings;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Scoring;
 using osu.Game.Screens.Play.Break;
 using osu.Game.Utils;
+using osuTK;
 
 namespace osu.Game.Screens.Play
 {
-    public partial class BreakOverlay : BeatSyncedContainer
+    public partial class BreakOverlay : BeatSyncedContainer, IKeyBindingHandler<GlobalAction>
     {
         /// <summary>
         /// The duration of the break overlay fading.
@@ -43,8 +47,11 @@ namespace osu.Game.Screens.Play
         private readonly BreakArrows breakArrows;
         private readonly ScoreProcessor scoreProcessor;
         private readonly BreakInfo info;
+        private readonly SkipButton skipButton;
 
         private readonly IBindable<Period?> currentPeriod = new Bindable<Period?>();
+
+        public Action RequestSkip;
 
         public BreakOverlay(ScoreProcessor scoreProcessor)
         {
@@ -119,6 +126,19 @@ namespace osu.Game.Screens.Play
                     {
                         Anchor = Anchor.Centre,
                         Origin = Anchor.Centre,
+                    },
+                    skipButton = new SkipButton
+                    {
+                        Anchor = Anchor.Centre,
+                        Origin = Anchor.Centre,
+
+                        RelativeSizeAxes = Axes.X,
+                        // Position = new Vector2(0.5f, 0.7f),
+                        Y = vertical_margin * 10,
+                        Size = new Vector2(1, 100),
+                        // Width = 100,
+                        // Height = 50,
+                        Action = () => RequestSkip?.Invoke()
                     }
                 }
             };
@@ -169,7 +189,10 @@ namespace osu.Game.Screens.Play
             Scheduler.CancelDelayedTasks();
 
             if (period.NewValue == null)
+            {
+                skipButton.Hide();
                 return;
+            }
 
             var b = period.NewValue.Value;
 
@@ -177,6 +200,7 @@ namespace osu.Game.Screens.Play
             {
                 fadeContainer.FadeIn(BREAK_FADE_DURATION);
                 breakArrows.Show(BREAK_FADE_DURATION);
+                skipButton.Show();
 
                 remainingTimeAdjustmentBox
                     .ResizeWidthTo(remaining_time_container_max_size, BREAK_FADE_DURATION, Easing.OutQuint)
@@ -197,8 +221,28 @@ namespace osu.Game.Screens.Play
                 {
                     fadeContainer.FadeOut(BREAK_FADE_DURATION);
                     breakArrows.Hide(BREAK_FADE_DURATION);
+                    skipButton.Hide();
                 }
             }
+        }
+
+        public bool OnPressed(KeyBindingPressEvent<GlobalAction> e)
+        {
+            if (e.Repeat || currentPeriod.Value == null)
+                return false;
+
+            switch (e.Action)
+            {
+                case GlobalAction.SkipCutscene:
+                    skipButton.TriggerClick();
+                    return true;
+            }
+
+            return false;
+        }
+
+        public void OnReleased(KeyBindingReleaseEvent<GlobalAction> e)
+        {
         }
     }
 }
