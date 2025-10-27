@@ -19,6 +19,7 @@ using osu.Game.Overlays.Settings;
 using osu.Game.Resources.Localisation.Web;
 using osuTK;
 using osu.Game.Localisation;
+using osu.Framework.Logging;
 
 namespace osu.Game.Overlays.Login
 {
@@ -27,6 +28,7 @@ namespace osu.Game.Overlays.Login
         private TextBox username = null!;
         private TextBox password = null!;
         private ShakeContainer shakeSignIn = null!;
+        private ShakeContainer shakeLocalUser = null!;
 
         [Resolved]
         private IAPIProvider api { get; set; } = null!;
@@ -116,6 +118,26 @@ namespace osu.Game.Overlays.Login
                                 Action = performLogin
                             },
                         }
+
+                    }
+                },
+                new Container
+                {
+                    RelativeSizeAxes = Axes.X,
+                    AutoSizeAxes = Axes.Y,
+                    Children = new Drawable[]
+                    {
+                        shakeLocalUser = new ShakeContainer
+                        {
+                            RelativeSizeAxes = Axes.X,
+                            AutoSizeAxes = Axes.Y,
+                            Child = new SettingsButton
+                            {
+                                Text = "LocalUser",
+                                Action = performLocalUser
+                            },
+                        }
+
                     }
                 },
                 new SettingsButton
@@ -147,6 +169,20 @@ namespace osu.Game.Overlays.Login
             else
                 shakeSignIn.Shake();
         }
+
+        private void performLocalUser()
+        {
+            if (!string.IsNullOrEmpty(username.Text)){
+                Logger.Log("Creating local user: " + username.Text, level: LogLevel.Debug);
+                if (api.LocalUserState is LocalUserState concreteState)
+                {
+                    concreteState.SetPlaceholderLocalUser(username.Text);
+                }
+            }
+            else
+                shakeLocalUser.Shake();
+        }
+
 
         protected override bool OnClick(ClickEvent e) => true;
 

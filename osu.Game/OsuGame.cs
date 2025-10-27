@@ -84,6 +84,7 @@ using osuTK.Graphics;
 using Sentry;
 using IntroScreen = osu.Game.Screens.Menu.IntroScreen;
 using MatchType = osu.Game.Online.Rooms.MatchType;
+using osu.Game.Models;
 
 namespace osu.Game
 {
@@ -1573,39 +1574,9 @@ namespace osu.Game
                         }
 
                         var user = API.LocalUser.Value;
-                        if (user.Id == APIUser.SYSTEM_USER_ID)
+                        if (user.Id <= 0)
                         {
-                            Logger.Log($"Toggling user profile for user KAKAKA {user}");
-                            var scores = ScoreManager.QueryScores(s => s.PP != null)
-                                .OrderByDescending(s => s.PP.Value)
-                                .ToList();
-                            double totalPP = 0;
-                            double weight = 1;
-
-                            foreach (var score in scores)
-                            {
-                                if(score.PP.HasValue){ 
-                                    totalPP += score.PP.Value * weight;
-                                    weight *= 0.95;
-                                }
-                            }
-
-                            var userWithStats = new APIUser
-                            {
-                                Id = user.Id,
-                                Username = user.Username,
-                                CountryCode = user.CountryCode,
-                                CoverUrl = user.CoverUrl,
-                                Statistics = new UserStatistics
-                                {
-                                    IsRanked = true,
-                                    PP = (decimal)totalPP,
-                                    Accuracy = scores.Any() ? scores.Average(s => s.Accuracy) : 1,
-                                    PlayCount = scores.Count,
-                                }
-                            };
-                            userProfile.ShowLocalUser(userWithStats, scores);
-                            // Schedule(() => ShowUser(userWithStats));
+                            userProfile.ShowLocalUser(user);
                         }
                         else
                         {

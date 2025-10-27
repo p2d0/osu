@@ -9,6 +9,7 @@ using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Effects;
 using osu.Framework.Graphics.Sprites;
+using osu.Framework.Logging;
 using osu.Game.Graphics;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Localisation;
@@ -96,6 +97,7 @@ namespace osu.Game.Overlays.Toolbar
 
         private void userChanged(ValueChangedEvent<APIUser> user) => Schedule(() =>
         {
+            Logger.Log("User changed, updating toolbar display", level: LogLevel.Debug);
             Text = user.NewValue.Username;
             avatar.User = user.NewValue;
         });

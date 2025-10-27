@@ -18,6 +18,7 @@ namespace osu.Game.Online.API
         /// </summary>
         IBindable<APIUser> LocalUser { get; }
 
+
         /// <summary>
         /// The local user's current state.
         /// Contains auxiliary information such as the user's friends, blocks, and favourites,

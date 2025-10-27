@@ -16,6 +16,7 @@ using osu.Framework.Bindables;
 using osu.Framework.Development;
 using osu.Framework.Extensions;
 using osu.Framework.Extensions.ExceptionExtensions;
+using osu.Framework.Extensions.IEnumerableExtensions;
 using osu.Framework.Extensions.ObjectExtensions;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Logging;
@@ -161,6 +162,7 @@ namespace osu.Game.Online.API
         /// </summary>
         private void run()
         {
+            log.Add("RUNNIN LOG");
             while (!cancellationToken.IsCancellationRequested)
             {
                 if (state.Value == APIState.Failing)
@@ -170,6 +172,10 @@ namespace osu.Game.Online.API
                     log.Add($@"{nameof(APIAccess)} is in a failing state, waiting a bit before we try again...");
                     Thread.Sleep(5000);
                 }
+                // if(ProvidedUsername != localUser.Value.Username){
+                //     log.Add("SETTING LOCAL USER");
+                //     Scheduler.Add(setLocalUser, false);
+                // }
 
                 // Ensure that we have valid credentials.
                 // If not, setting the offline state will allow the game to prompt the user to provide new credentials.
