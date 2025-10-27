@@ -5,6 +5,17 @@
  - Merged mods NoSliding and SpacingAdjust
  - Show star rating on leaderboards
  
+## Running
+
+Clone the repository:
+
+```shell
+git clone https://github.com/p2d0/osu
+cd osu
+git checkout experimental
+dotnet run --project osu.Desktop
+```
+
 <p align="center">
   <img width="500" alt="osu! logo" src="assets/lazer.png">
 </p>
