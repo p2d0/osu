@@ -177,6 +177,8 @@ namespace osu.Game.Overlays.Login
                 if (api.LocalUserState is LocalUserState concreteState)
                 {
                     concreteState.SetPlaceholderLocalUser(username.Text);
+                } else {
+                    Logger.Log("api.LocalUserState is not LocalUserState", level: LogLevel.Error);
                 }
             }
             else

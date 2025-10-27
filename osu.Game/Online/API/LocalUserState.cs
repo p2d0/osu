@@ -47,9 +47,6 @@ namespace osu.Game.Online.API
         /// </summary>
         public void SetPlaceholderLocalUser(string username)
         {
-            if (!localUser.IsDefault)
-                return;
-
             localUser.Value = new APIUser
             {
                 Username = username,

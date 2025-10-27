@@ -102,7 +102,7 @@ namespace osu.Game.Overlays
             ruleset = userRuleset;
 
             Show();
-            if (userToShow.OnlineID == APIUser.SYSTEM_USER_ID)
+            if (userToShow.OnlineID <= 1)
                 Scheduler.AddOnce(fetchAndSetContentForLocalUser);
             else
                 Scheduler.AddOnce(fetchAndSetContent);

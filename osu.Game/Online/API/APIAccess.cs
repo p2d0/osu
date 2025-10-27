@@ -96,18 +96,16 @@ namespace osu.Game.Online.API
             log.Add($@"API request version: {APIVersion}");
 
             ProvidedUsername = config.Get<string>(OsuSetting.Username);
-            setLocalUser(ProvidedUsername);
 
             authentication.TokenString = config.Get<string>(OsuSetting.Token);
             authentication.Token.ValueChanged += onTokenChanged;
 
             AddInternal(localUserState = new LocalUserState(this, config));
 
+            localUserState.SetPlaceholderLocalUser(ProvidedUsername);
+
             if (HasLogin)
             {
-                // Early call to ensure the local user / "logged in" state is correct immediately.
-                localUserState.SetPlaceholderLocalUser(ProvidedUsername);
-
                 // This is required so that Queue() requests during startup sequence don't fail due to "not logged in".
                 state.Value = APIState.Connecting;
             }
