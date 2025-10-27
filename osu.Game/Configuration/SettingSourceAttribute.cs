@@ -15,6 +15,7 @@ using osu.Framework.Localisation;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Overlays.Settings;
 using osu.Game.Utils;
+using Logger = osu.Framework.Logging.Logger;
 
 namespace osu.Game.Configuration
 {
@@ -43,6 +44,10 @@ namespace osu.Game.Configuration
         /// Must be a type deriving <see cref="SettingsItem{T}"/> with a public parameterless constructor.
         /// </remarks>
         public Type? SettingControlType { get; set; }
+
+        public string? IsHidden { get; set; }
+        public string? IsVisible { get; set; }
+
 
         public SettingSourceAttribute(Type declaringType, string label, string? description = null)
         {
@@ -91,6 +96,7 @@ namespace osu.Game.Configuration
             OrderPosition = orderPosition;
         }
 
+
         public int CompareTo(SettingSourceAttribute? other)
         {
             if (OrderPosition == other?.OrderPosition)
@@ -115,6 +121,40 @@ namespace osu.Game.Configuration
             {
                 object value = property.GetValue(obj)!;
 
+                // Handle CanBeShown logic
+                Bindable<bool>? IsHiddenBindable = null;
+                if (attr.IsHidden != null)
+                {
+                    if(attr.IsVisible != null)
+                        throw new InvalidOperationException($"Cannot set both {nameof(attr.IsHidden)} and {nameof(attr.IsVisible)} in {nameof(SettingSourceAttribute)}");
+
+                    var IsHiddenProperty = obj.GetType().GetProperty(attr.IsHidden, BindingFlags.Public | BindingFlags.Instance);
+                    if (IsHiddenProperty != null)
+                    {
+                        var IsHiddenValue = IsHiddenProperty.GetValue(obj);
+                        if (IsHiddenValue is Bindable<bool> bindableBool)
+                        {
+                            IsHiddenBindable = bindableBool;
+                        }
+                    }
+                }
+
+                Bindable<bool>? IsVisibleBindable = null;
+                if (attr.IsVisible != null)
+                {
+                    if(attr.IsHidden != null)
+                        throw new InvalidOperationException($"Cannot set both {nameof(attr.IsHidden)} and {nameof(attr.IsVisible)} in {nameof(SettingSourceAttribute)}");
+                    var IsVisibleProperty = obj.GetType().GetProperty(attr.IsVisible, BindingFlags.Public | BindingFlags.Instance);
+                    if (IsVisibleProperty != null)
+                    {
+                        var IsVisibleValue = IsVisibleProperty.GetValue(obj);
+                        if (IsVisibleValue is Bindable<bool> bindableBool)
+                        {
+                            IsVisibleBindable = bindableBool;
+                        }
+                    }
+                }
+
                 if (attr.SettingControlType != null)
                 {
                     var controlType = attr.SettingControlType;
@@ -126,11 +166,22 @@ namespace osu.Game.Configuration
                     controlType.GetProperty(nameof(SettingsItem<object>.LabelText))?.SetValue(control, attr.Label);
                     controlType.GetProperty(nameof(SettingsItem<object>.TooltipText))?.SetValue(control, attr.Description);
                     controlType.GetProperty(nameof(SettingsItem<object>.Current))?.SetValue(control, value);
+                    if(IsHiddenBindable != null){
+                        if(controlType.GetProperty(nameof(SettingsDropdown<object>.IsHidden))?.GetValue(control) is Bindable<bool> isHidden)
+                            isHidden.BindTo(IsHiddenBindable);
+                    }
+
+                    if(IsVisibleBindable != null){
+                        if(controlType.GetProperty(nameof(SettingsDropdown<object>.IsVisible))?.GetValue(control) is Bindable<bool> isVisible)
+                            isVisible.BindTo(IsVisibleBindable);
+                    }
+
 
                     yield return control;
 
                     continue;
                 }
+
 
                 switch (value)
                 {
@@ -141,8 +192,7 @@ namespace osu.Game.Configuration
                             TooltipText = attr.Description,
                             Current = bNumber,
                             KeyboardStep = 0.1f,
-                        };
-
+                        }.ApplyVisibilityBindables(IsVisibleBindable, IsHiddenBindable);
                         break;
 
                     case BindableNumber<double> bNumber:
@@ -152,7 +202,7 @@ namespace osu.Game.Configuration
                             TooltipText = attr.Description,
                             Current = bNumber,
                             KeyboardStep = 0.1f,
-                        };
+                        }.ApplyVisibilityBindables(IsVisibleBindable, IsHiddenBindable);
 
                         break;
 
@@ -161,8 +211,8 @@ namespace osu.Game.Configuration
                         {
                             LabelText = attr.Label,
                             TooltipText = attr.Description,
-                            Current = bNumber
-                        };
+                            Current = bNumber,
+                        }.ApplyVisibilityBindables(IsVisibleBindable, IsHiddenBindable);
 
                         break;
 
@@ -171,9 +221,8 @@ namespace osu.Game.Configuration
                         {
                             LabelText = attr.Label,
                             TooltipText = attr.Description,
-                            Current = bBool
-                        };
-
+                            Current = bBool,
+                        }.ApplyVisibilityBindables(IsVisibleBindable, IsHiddenBindable);
                         break;
 
                     case Bindable<string> bString:
@@ -181,9 +230,8 @@ namespace osu.Game.Configuration
                         {
                             LabelText = attr.Label,
                             TooltipText = attr.Description,
-                            Current = bString
-                        };
-
+                            Current = bString,
+                        }.ApplyVisibilityBindables(IsVisibleBindable, IsHiddenBindable);
                         break;
 
                     case BindableColour4 bColour:
@@ -191,9 +239,8 @@ namespace osu.Game.Configuration
                         {
                             LabelText = attr.Label,
                             TooltipText = attr.Description,
-                            Current = bColour
-                        };
-
+                            Current = bColour,
+                        }.ApplyVisibilityBindables(IsVisibleBindable, IsHiddenBindable);
                         break;
 
                     case IBindable bindable:
@@ -203,6 +250,15 @@ namespace osu.Game.Configuration
                         dropdownType.GetProperty(nameof(SettingsDropdown<object>.LabelText))?.SetValue(dropdown, attr.Label);
                         dropdownType.GetProperty(nameof(SettingsDropdown<object>.TooltipText))?.SetValue(dropdown, attr.Description);
                         dropdownType.GetProperty(nameof(SettingsDropdown<object>.Current))?.SetValue(dropdown, bindable);
+                        if(IsHiddenBindable != null){
+                            if(dropdownType.GetProperty(nameof(SettingsDropdown<object>.IsHidden))?.GetValue(dropdown) is Bindable<bool> isHidden)
+                                isHidden.BindTo(IsHiddenBindable);
+                        }
+
+                        if(IsVisibleBindable != null){
+                            if(dropdownType.GetProperty(nameof(SettingsDropdown<object>.IsVisible))?.GetValue(dropdown) is Bindable<bool> isVisible)
+                                isVisible.BindTo(IsVisibleBindable);
+                        }
 
                         yield return dropdown;
 
@@ -212,6 +268,20 @@ namespace osu.Game.Configuration
                         throw new InvalidOperationException($"{nameof(SettingSourceAttribute)} was attached to an unsupported type ({value})");
                 }
             }
+        }
+
+        public static T ApplyVisibilityBindables<T>(this T control, Bindable<bool>? isVisibleBindable, Bindable<bool>? isHiddenBindable) where T : Drawable
+        {
+            if (control is ISettingsItem settingsItem)
+            {
+                if (isVisibleBindable != null){
+                    settingsItem.IsVisible.BindTo(isVisibleBindable);
+                }
+                if (isHiddenBindable != null){
+                    settingsItem.IsHidden.BindTo(isHiddenBindable);
+                }
+            }
+            return control;
         }
 
         private static readonly ConcurrentDictionary<Type, (SettingSourceAttribute, PropertyInfo)[]> property_info_cache = new ConcurrentDictionary<Type, (SettingSourceAttribute, PropertyInfo)[]>();

@@ -68,7 +68,11 @@ namespace osu.Game.Rulesets.Osu.Utils
         /// <param name="extendPlayArea">Extend Play area</param>
         /// <param name="infinitePlayArea">Infinite play area</param>
         /// <returns>The repositioned hit objects.</returns>
-        public static List<OsuHitObject> RepositionHitObjects(IEnumerable<ObjectPositionInfo> objectPositionInfos)
+        public static List<OsuHitObject> RepositionHitObjects(IEnumerable<ObjectPositionInfo> objectPositionInfos,
+                                                              bool isHardcore = false,
+                                                              bool extendPlayArea = false,
+                                                              bool infinitePlayArea = false
+        )
         {
             List<WorkingObject> workingObjects = objectPositionInfos.Select(o => new WorkingObject(o)).ToList();
             WorkingObject? previous = null;
@@ -92,7 +96,7 @@ namespace osu.Game.Rulesets.Osu.Utils
                 switch (hitObject)
                 {
                     case HitCircle:
-                        shift = clampHitCircleToPlayfield(current);
+                        shift = clampHitCircleToPlayfield(current,isHardcore, extendPlayArea, infinitePlayArea);
                         break;
 
                     case Slider:
@@ -100,7 +104,7 @@ namespace osu.Game.Rulesets.Osu.Utils
                         break;
                 }
 
-                if (shift != Vector2.Zero)
+                if (!isHardcore && shift != Vector2.Zero)
                 {
                     var toBeShifted = new List<OsuHitObject>();
 
@@ -177,13 +181,21 @@ namespace osu.Game.Rulesets.Osu.Utils
         /// Move the modified position of a <see cref="HitCircle"/> so that it fits inside the playfield.
         /// </summary>
         /// <returns>The deviation from the original modified position in order to fit within the playfield.</returns>
-        private static Vector2 clampHitCircleToPlayfield(WorkingObject workingObject)
+        private static Vector2 clampHitCircleToPlayfield(WorkingObject workingObject, bool isHardcore = false, bool extendPlayArea = false,bool infinitePlayArea = false)
         {
             var previousPosition = workingObject.PositionModified;
-            workingObject.EndPositionModified = workingObject.PositionModified = clampToPlayfieldWithPadding(
-                workingObject.PositionModified,
-                (float)workingObject.HitObject.Radius
+            if(!infinitePlayArea && !extendPlayArea)
+                workingObject.EndPositionModified = workingObject.PositionModified = ClampToPlayfieldWithPadding(
+                    workingObject.PositionModified,
+                    isHardcore ? 0f : (float)workingObject.HitObject.Radius
+                );
+
+            if(extendPlayArea)
+                workingObject.EndPositionModified = workingObject.PositionModified = new Vector2(
+                Math.Clamp(workingObject.PositionModified.X, 0, OsuPlayfield.BASE_SIZE.X + 40),
+                Math.Clamp(workingObject.PositionModified.Y, 0, OsuPlayfield.BASE_SIZE.Y + 30)
             );
+
 
             workingObject.HitObject.Position = workingObject.PositionModified;
 
@@ -253,7 +265,7 @@ namespace osu.Game.Rulesets.Osu.Utils
                 // The last object is shifted by a vector slightly larger than zero
                 Vector2 position = hitObject.Position + shift * ((hitObjects.Count - i) / (float)(hitObjects.Count + 1));
 
-                hitObject.Position = clampToPlayfieldWithPadding(position, (float)hitObject.Radius);
+                hitObject.Position = ClampToPlayfieldWithPadding(position, (float)hitObject.Radius);
             }
         }
 
@@ -314,7 +326,7 @@ namespace osu.Game.Rulesets.Osu.Utils
         /// <param name="position">The position to be clamped.</param>
         /// <param name="padding">The minimum distance allowed from playfield edges.</param>
         /// <returns>The clamped position.</returns>
-        private static Vector2 clampToPlayfieldWithPadding(Vector2 position, float padding)
+        public static Vector2 ClampToPlayfieldWithPadding(Vector2 position, float padding)
         {
             return new Vector2(
                 Math.Clamp(position.X, padding, OsuPlayfield.BASE_SIZE.X - padding),
