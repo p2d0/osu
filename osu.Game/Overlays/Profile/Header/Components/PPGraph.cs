@@ -17,7 +17,7 @@ namespace osu.Game.Overlays.Profile.Header.Components
 {
     public partial class PPGraph : RankGraph
     {
-        protected override float GetDataPointHeight(int rank) => MathF.Log(rank);
+        protected override float GetDataPointHeight(int rank) => MathF.Pow(rank, 4);
         private const int pp_days = 88;
 
         protected override UserGraphTooltipContent GetTooltipContent(int index, int rank)
