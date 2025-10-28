@@ -169,7 +169,7 @@ namespace osu.Game.Overlays.Profile.Header.Components
             detailCountryRank.Content = user?.Statistics?.CountryRank?.ToLocalisableString("\\##,##0") ?? (LocalisableString)"-";
             detailCountryRank.ContentTooltipText = getCountryRankTooltipText(user);
 
-            if(user?.OnlineID == APIUser.SYSTEM_USER_ID)
+            if(user?.OnlineID <= 1)
             {
                 Schedule(() =>{
                     rankGraph.Hide();
