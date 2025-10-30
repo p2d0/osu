@@ -275,5 +275,72 @@ namespace osu.Game.Rulesets.Mods
 
             public int GetHashCode(IBindable obj) => obj.GetUnderlyingSettingValue().GetHashCode();
         }
+
+        /// <summary>
+        /// Compares two mods for equality, with an option to ignore a specific set of settings.
+        /// </summary>
+        public class ModEqualityComparer : IEqualityComparer<Mod>
+        {
+            private readonly ISet<string> settings_to_ignore;
+
+            /// <summary>
+            /// Creates a new mod comparer.
+            /// </summary>
+            /// <param name="settingsToIgnore">
+            /// A collection of snake_case setting names to ignore during comparison.
+            /// If empty or null, all settings will be compared.
+            /// </param>
+            public ModEqualityComparer(IEnumerable<string>? settingsToIgnore = null)
+            {
+                // Use a HashSet for efficient O(1) lookups.
+                this.settings_to_ignore = settingsToIgnore != null
+                    ? new HashSet<string>(settingsToIgnore)
+                    : new HashSet<string>();
+            }
+
+            public bool Equals(Mod? x, Mod? y)
+            {
+                if (ReferenceEquals(x, y)) return true;
+                if (ReferenceEquals(x, null) || ReferenceEquals(y, null)) return false;
+
+                if (x.GetType() != y.GetType()) return false;
+
+                // Get the settings from both mods, filtering out any that are in our ignore set.
+                var xSettings = x.SettingsBindables.Where(s => !settings_to_ignore.Contains(GetSettingName(x, s)));
+                var ySettings = y.SettingsBindables.Where(s => !settings_to_ignore.Contains(GetSettingName(y, s)));
+
+                // Compare the filtered sequences of settings.
+                return xSettings.SequenceEqual(ySettings, ModSettingsEqualityComparer.Default);
+            }
+
+            public int GetHashCode(Mod obj)
+            {
+                var hashCode = new HashCode();
+                hashCode.Add(obj.GetType());
+
+                // Build the hash code using only the settings that are NOT ignored.
+                foreach (var setting in obj.SettingsBindables.Where(s => !settings_to_ignore.Contains(GetSettingName(obj, s))))
+                {
+                    hashCode.Add(setting.GetUnderlyingSettingValue());
+                }
+
+                return hashCode.ToHashCode();
+            }
+
+            // Helper to find the snake_case name of a setting from its IBindable instance.
+            private string? GetSettingName(Mod mod, IBindable bindable)
+            {
+                return mod.SettingsMap.FirstOrDefault(kvp => kvp.Value == bindable).Key;
+            }
+
+            // This nested class can be copied directly from the previous answer or your original Mod.cs
+            // if it's not publicly accessible.
+            private class ModSettingsEqualityComparer : IEqualityComparer<IBindable>
+            {
+                public static ModSettingsEqualityComparer Default { get; } = new ModSettingsEqualityComparer();
+                public bool Equals(IBindable? x, IBindable? y) => EqualityComparer<object>.Default.Equals(x?.GetUnderlyingSettingValue(), y?.GetUnderlyingSettingValue());
+                public int GetHashCode(IBindable obj) => obj.GetUnderlyingSettingValue().GetHashCode();
+            }
+        }
     }
 }

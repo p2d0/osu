@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Newtonsoft.Json;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Development;
@@ -20,6 +21,7 @@ using osu.Game.Rulesets.Mods;
 using osu.Game.Scoring;
 using osu.Game.Screens.Select.Leaderboards;
 using Realms;
+using static osu.Game.Rulesets.Mods.Mod;
 
 namespace osu.Game.Online.Leaderboards
 {
@@ -186,9 +188,28 @@ namespace osu.Game.Online.Leaderboards
                 {
                     // otherwise find all the scores that have all of the currently selected mods (similar to how web applies mod filters)
                     // we're creating and using a string HashSet representation of selected mods so that it can be translated into the DB query itself
-                    var selectedMods = CurrentCriteria.ExactMods.Select(m => m.Acronym).ToHashSet();
+                    var selectedMods = CurrentCriteria.ExactMods.Select(m => m.SettingsMap).ToHashSet();
 
-                    newScores = newScores.Where(s => selectedMods.SetEquals(s.Mods.Select(m => m.Acronym)));
+                    // newScores = newScores.Where(s => );
+                    // newScores = newScores.Where(s => s.Mods == CurrentCriteria.ExactMods);
+
+                    // Define the list of setting names you want to ignore.
+                    // Remember, these are the property names converted to snake_case.
+                    var settingsToIgnore = new[]
+                    {
+                        "seed"
+                    };
+
+                    // Create an instance of the custom comparer with the ignore list.
+                    var modComparer = new ModEqualityComparer(settingsToIgnore);
+
+                    // Use this comparer in your LINQ query.
+                    // This will now compare mods while skipping any settings defined in the list.
+                    newScores = newScores.Where(s =>
+                                                s.Mods.OrderBy(m => m.Acronym)
+                                                .SequenceEqual(CurrentCriteria.ExactMods.OrderBy(m => m.Acronym), modComparer)
+                    );
+                    // newScores = newScores.Where(s => s.Mods.SequenceEqual(CurrentCriteria.ExactMods));
                 }
             }
 
