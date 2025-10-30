@@ -2,8 +2,9 @@
  - Local PP
  - Skip breaks
  - ModRandomV2
- - Merged mods NoSliding and SpacingAdjust
+ - Merged mods [NoSliding](https://github.com/ppy/osu/pull/22067) and [SpacingAdjust](https://github.com/ppy/osu/pull/18559)
  - Show star rating on leaderboards
+ - Leaderboards "Selected Mods" now filters by mod options too
  
 ## Running
 
