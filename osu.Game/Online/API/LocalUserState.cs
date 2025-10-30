@@ -19,6 +19,7 @@ namespace osu.Game.Online.API
         public IBindableList<int> FavouriteBeatmapSets => favouriteBeatmapSets;
 
         private readonly IAPIProvider api;
+        private readonly OsuConfigManager config;
 
         private readonly Bindable<APIUser> localUser = new Bindable<APIUser>(createGuestUser());
         private readonly BindableList<APIRelation> friends = new BindableList<APIRelation>();
@@ -31,6 +32,7 @@ namespace osu.Game.Online.API
         public LocalUserState(IAPIProvider api, OsuConfigManager config)
         {
             this.api = api;
+            this.config = config;
 
             config.BindWith(OsuSetting.UserOnlineStatus, configStatus);
             config.BindWith(OsuSetting.WasSupporter, configSupporter);
@@ -52,6 +54,7 @@ namespace osu.Game.Online.API
                 Username = username,
                 IsSupporter = configSupporter.Value,
             };
+            config.SetValue(OsuSetting.Username, config.Get<bool>(OsuSetting.SaveUsername) ? username : string.Empty);
         }
 
         public void SetLocalUser(APIMe me)
