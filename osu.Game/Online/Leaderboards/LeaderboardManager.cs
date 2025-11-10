@@ -197,7 +197,8 @@ namespace osu.Game.Online.Leaderboards
                     // Remember, these are the property names converted to snake_case.
                     var settingsToIgnore = new[]
                     {
-                        "seed"
+                        "seed",
+                        "approach_rate"
                     };
 
                     // Create an instance of the custom comparer with the ignore list.
