@@ -31,6 +31,7 @@ namespace osu.Game.Screens.Select
         public OptionalRange<double> BPM;
         public OptionalRange<int> BeatDivisor;
         public OptionalRange<int> Objects;
+        public OptionalRange<double> ObjectsPerMinute;
         public OptionalSet<BeatmapOnlineStatus> OnlineStatus = new OptionalSet<BeatmapOnlineStatus>();
         public OptionalRange<DateTimeOffset> LastPlayed;
         public OptionalRange<DateTimeOffset> DateRanked;
