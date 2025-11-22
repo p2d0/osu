@@ -59,6 +59,9 @@ namespace osu.Game.Screens.Select
                 case "bpm":
                     return TryUpdateCriteriaRange(ref criteria.BPM, op, value, 0.5f);
 
+                case "objects":
+                    return TryUpdateCriteriaRange(ref criteria.Objects, op, value, tryParseInt);
+
                 case "length":
                     return tryUpdateLengthRange(criteria, op, value);
 
