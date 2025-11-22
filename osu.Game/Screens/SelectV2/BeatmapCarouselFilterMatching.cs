@@ -90,6 +90,7 @@ namespace osu.Game.Screens.SelectV2
             match &= !criteria.DateSubmitted.HasFilter || (beatmap.BeatmapSet?.DateSubmitted != null && criteria.DateSubmitted.IsInRange(beatmap.BeatmapSet.DateSubmitted.Value));
             match &= !criteria.BPM.HasFilter || criteria.BPM.IsInRange(beatmap.BPM);
             match &= !criteria.Objects.HasFilter || criteria.Objects.IsInRange(beatmap.TotalObjectCount);
+            match &= !criteria.ObjectsPerMinute.HasFilter || criteria.ObjectsPerMinute.IsInRange((beatmap.TotalObjectCount / (beatmap.Length / 1000)) * 60);
 
             match &= !criteria.BeatDivisor.HasFilter || criteria.BeatDivisor.IsInRange(beatmap.BeatDivisor);
             match &= !criteria.OnlineStatus.HasFilter || criteria.OnlineStatus.IsInRange(beatmap.Status);
