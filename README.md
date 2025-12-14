@@ -5,6 +5,7 @@
  - Merged mods [NoSliding](https://github.com/ppy/osu/pull/22067) and [SpacingAdjust](https://github.com/ppy/osu/pull/18559)
  - Show star rating on leaderboards
  - Leaderboards "Selected Mods" now filters by mod options too
+ - New filters "objects>100" and "opm>100" (objects per minute)
  
 ## Running
 
