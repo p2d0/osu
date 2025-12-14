@@ -185,7 +185,6 @@ namespace osu.Game.Screens.Play
 
         private void updateDisplay(ValueChangedEvent<Period?> period)
         {
-            FinishTransforms(true);
             Scheduler.CancelDelayedTasks();
 
             if (period.NewValue == null)
@@ -204,12 +203,12 @@ namespace osu.Game.Screens.Play
 
                 remainingTimeAdjustmentBox
                     .ResizeWidthTo(remaining_time_container_max_size, BREAK_FADE_DURATION, Easing.OutQuint)
-                    .Delay(b.Duration - BREAK_FADE_DURATION)
+                    .Delay(b.Duration)
                     .ResizeWidthTo(0);
 
                 remainingTimeBox.ResizeWidthTo(remainingTimeForCurrentPeriod);
 
-                remainingTimeCounter.CountTo(b.Duration).CountTo(0, b.Duration);
+                remainingTimeCounter.CountTo(b.Duration + BREAK_FADE_DURATION).CountTo(0, b.Duration + BREAK_FADE_DURATION);
 
                 remainingTimeCounter.MoveToX(-50)
                                     .MoveToX(0, BREAK_FADE_DURATION, Easing.OutQuint);
@@ -217,7 +216,7 @@ namespace osu.Game.Screens.Play
                 info.MoveToX(50)
                     .MoveToX(0, BREAK_FADE_DURATION, Easing.OutQuint);
 
-                using (BeginDelayedSequence(b.Duration - BREAK_FADE_DURATION))
+                using (BeginDelayedSequence(b.Duration))
                 {
                     fadeContainer.FadeOut(BREAK_FADE_DURATION);
                     breakArrows.Hide(BREAK_FADE_DURATION);
