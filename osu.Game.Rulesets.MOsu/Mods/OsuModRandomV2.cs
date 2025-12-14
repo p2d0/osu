@@ -119,7 +119,7 @@ namespace osu.Game.Rulesets.MOsu.Mods
         public BindableBool PowerStreams { get; } = new BindableBool(false);
 
         [SettingSource("Divide by divisor", "Use the beat divisor to distinguish streams/jumps")]
-        public Bindable<bool> DivideByDivisor { get; } = new BindableBool(false);
+        public Bindable<bool> DivideByDivisor { get; } = new BindableBool(true);
 
         // 4. Divisor: Visible when DivideByDivisor is true
         [SettingSource("Divisor", "Divisor selector", SettingControlType = typeof(DivisorSetting))]
