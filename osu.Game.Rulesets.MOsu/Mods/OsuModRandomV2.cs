@@ -48,7 +48,8 @@ namespace osu.Game.Rulesets.MOsu.Mods
 
         public override Type[] IncompatibleMods => base.IncompatibleMods.Append(typeof(OsuModTargetPractice)).ToArray();
 
-        [SettingSource("Angle sharpness", "How sharp angles should be")]
+        // 1. AngleSharpness: Hidden when CustomAngle is true
+        [SettingSource("Angle sharpness", "How sharp angles should be", SettingControlType = typeof(AngleSharpnessSetting))]
         public BindableFloat AngleSharpness { get; } = new BindableFloat(7)
         {
             MinValue = 1,
@@ -56,7 +57,8 @@ namespace osu.Game.Rulesets.MOsu.Mods
             Precision = 0.1f
         };
 
-        [SettingSource("Stream Angle sharpness", "How sharp angles should be")]
+        // 2. StreamAngleSharpness: Hidden when CustomAngle is true
+        [SettingSource("Stream Angle sharpness", "How sharp angles should be", SettingControlType = typeof(AngleSharpnessSetting))]
         public BindableFloat StreamAngleSharpness { get; } = new BindableFloat(7)
         {
             MinValue = 1,
@@ -67,7 +69,8 @@ namespace osu.Game.Rulesets.MOsu.Mods
         [SettingSource("Custom angle", "Custom angle")]
         public Bindable<bool> CustomAngle { get; } = new BindableBool(false);
 
-        public enum AngleEnum {
+        public enum AngleEnum
+        {
             Square,
             Star,
             FourtyFive,
@@ -85,7 +88,8 @@ namespace osu.Game.Rulesets.MOsu.Mods
             { AngleEnum.FourtyFive, 0.785398f } // 45 degrees in radians
         };
 
-        [SettingSource("Angle", "Angle selector")]
+        // 3. Angle: Visible when CustomAngle is true
+        [SettingSource("Angle", "Angle selector", SettingControlType = typeof(AngleEnumSetting))]
         public Bindable<AngleEnum> Angle { get; } = new Bindable<AngleEnum>
         {
             Default = AngleEnum.Square,
@@ -117,89 +121,93 @@ namespace osu.Game.Rulesets.MOsu.Mods
         [SettingSource("Divide by divisor", "Use the beat divisor to distinguish streams/jumps")]
         public Bindable<bool> DivideByDivisor { get; } = new BindableBool(false);
 
-        [SettingSource("Divisor", "Divisor selector")]
+        // 4. Divisor: Visible when DivideByDivisor is true
+        [SettingSource("Divisor", "Divisor selector", SettingControlType = typeof(DivisorSetting))]
         public BindableInt Divisor { get; } = new BindableInt(2)
-            {
-                MinValue = 1,
-                MaxValue = 16,
-                Default = 2,
-            };
+        {
+            MinValue = 1,
+            MaxValue = 16,
+            Default = 2,
+        };
 
-        [SettingSource("Stream Distance", "How much bigger the distance")]
+        // 5. StreamDistance: Hidden when DivideByDivisor is true
+        [SettingSource("Stream Distance", "How much bigger the distance", SettingControlType = typeof(StreamDistanceSetting))]
         public BindableInt StreamDistance { get; } = new BindableInt(100)
         {
             MinValue = 25,
             MaxValue = 500,
         };
 
-        // [SettingSource("Extend playarea", "Extend playarea")]
         public Bindable<bool> ExtendPlayArea { get; } = new BindableBool(false);
 
-        // [SettingSource("Infinite playarea", "Infinite playarea")]
         public Bindable<bool> InfinitePlayArea { get; } = new BindableBool(false);
 
         [SettingSource("Generate circles", "Generate hit circles in a square pattern")]
         public Bindable<bool> SquareMod { get; } = new BindableBool(false);
 
-        [SettingSource("Divisor", "Divisor selector")]
+        // 6. SquareMod items: Visible when SquareMod is true
+        [SettingSource("Divisor", "Divisor selector", SettingControlType = typeof(SquareModIntSetting))]
         public BindableInt SquareModDivisor { get; } = new BindableInt(2)
-            {
-                MinValue = 1,
-                MaxValue = 16,
-                Default = 2,
-            };
+        {
+            MinValue = 1,
+            MaxValue = 16,
+            Default = 2,
+        };
 
-        [SettingSource("Distance", "Distance")]
+        [SettingSource("Distance", "Distance", SettingControlType = typeof(SquareModIntSetting))]
         public BindableInt SquareModDistance { get; } = new BindableInt(50)
-            {
-                MinValue = 1,
-                MaxValue = 200,
-                Default = 50
-            };
+        {
+            MinValue = 1,
+            MaxValue = 200,
+            Default = 50
+        };
 
-        [SettingSource("Include breaks?", "Add breaks")]
-        public Bindable<bool>  SquareModBreak { get; } = new BindableBool(false);
+        [SettingSource("Include breaks?", "Add breaks", SettingControlType = typeof(SquareModBoolSetting))]
+        public Bindable<bool> SquareModBreak { get; } = new BindableBool(false);
 
-        [SettingSource("Break interval", "Break every x objects")]
+        // 7. BreakInterval: Visible when SquareMod AND SquareModBreak are true
+        [SettingSource("Break interval", "Break every x objects", SettingControlType = typeof(SquareModBreakIntervalSetting))]
         public BindableInt SquareModBreakInterval { get; } = new BindableInt(100)
-            {
-                MinValue = 1,
-                MaxValue = 500,
-                Default = 100,
-            };
-        // TEST
+        {
+            MinValue = 1,
+            MaxValue = 500,
+            Default = 100,
+        };
 
-        [SettingSource("Break duration (in hitobjects)", "Break for x circles")]
+        [SettingSource("Break duration (in hitobjects)", "Break for x circles", SettingControlType = typeof(SquareModIntSetting))]
         public BindableInt SquareModBreakObjects { get; } = new BindableInt(25)
-            {
-                MinValue = 1,
-                MaxValue = 100,
-                Default = 25,
-            };
+        {
+            MinValue = 1,
+            MaxValue = 100,
+            Default = 25,
+        };
 
-        [SettingSource("Full map?", "Full map or just a part")]
-        public Bindable<bool>  SquareModFullMap { get; } = new BindableBool(true);
+        [SettingSource("Full map?", "Full map or just a part", SettingControlType = typeof(SquareModBoolSetting))]
+        public Bindable<bool> SquareModFullMap { get; } = new BindableBool(true);
 
-        [SettingSource("Offset (in circles)", "Offset in circles")]
+        // 8. SquareModeOffset: Visible when SquareMod is true AND SquareModFullMap is false
+        [SettingSource("Offset (in circles)", "Offset in circles", SettingControlType = typeof(SquareModOffsetSetting))]
         public BindableInt SquareModeOffset { get; } = new BindableInt(0)
-            {
-                MinValue = 0,
-                MaxValue = 5000,
-                Precision = 50,
-                Default = 0,
-            };
+        {
+            MinValue = 0,
+            MaxValue = 5000,
+            Precision = 50,
+            Default = 0,
+        };
 
-        [SettingSource("Hitobjects count", "How many circles", SettingControlType = typeof(SettingsSlider<int, SquareModObjectCountSliderBar>))]
+        // 9. SquareModCount: Visible when SquareMod is true AND SquareModFullMap is false
+        // Uses a custom slider bar logic AND custom visibility logic
+        [SettingSource("Hitobjects count", "How many circles", SettingControlType = typeof(SquareModCountSetting))]
         public BindableInt SquareModCount { get; } = new BindableInt(0)
-            {
-                MinValue = 0,
-                MaxValue = 5000,
-                Precision = 100,
-                Default = 0,
-            };
+        {
+            MinValue = 0,
+            MaxValue = 5000,
+            Precision = 100,
+            Default = 0,
+        };
 
-        [SettingSource("Increasing?", "3 then 6 then 9 circles ec")]
-        public Bindable<bool>  SquareModIncreasing { get; } = new BindableBool(false);
+        [SettingSource("Increasing?", "3 then 6 then 9 circles ec", SettingControlType = typeof(SquareModBoolSetting))]
+        public Bindable<bool> SquareModIncreasing { get; } = new BindableBool(false);
 
         [SettingSource("Hard random", "Remove circle padding and unnecessary shifting")]
         public Bindable<bool> Hardcore { get; } = new BindableBool(true);
@@ -664,10 +672,166 @@ namespace osu.Game.Rulesets.MOsu.Mods
             Logger.Log($"Breaks: {beatmap.Breaks.Count}");
             Logger.Log($"TotalBreakTime: {beatmap.TotalBreakTime}ms");
         }
-    }
+
+        public partial class AngleSharpnessSetting : SettingsSlider<float>
+        {
+            protected override void LoadComplete()
+            {
+                base.LoadComplete();
+                if (SettingSourceObject is OsuModRandomV2 mod)
+                {
+                    mod.CustomAngle.BindValueChanged(val =>
+                    {
+                        if (val.NewValue) Hide(); else Show();
+                    }, true);
+                }
+            }
+        }
+
+        // 2. Logic: Visible if CustomAngle is True
+        public partial class AngleEnumSetting : SettingsEnumDropdown<AngleEnum>
+        {
+            protected override void LoadComplete()
+            {
+                base.LoadComplete();
+                if (SettingSourceObject is OsuModRandomV2 mod)
+                {
+                    mod.CustomAngle.BindValueChanged(val =>
+                    {
+                        if (val.NewValue) Show(); else Hide();
+                    }, true);
+                }
+            }
+        }
+
+        // 3. Logic: Visible if DivideByDivisor is True
+        public partial class DivisorSetting : SettingsSlider<int>
+        {
+            protected override void LoadComplete()
+            {
+                base.LoadComplete();
+                if (SettingSourceObject is OsuModRandomV2 mod)
+                {
+                    mod.DivideByDivisor.BindValueChanged(val =>
+                    {
+                        if (val.NewValue) Show(); else Hide();
+                    }, true);
+                }
+            }
+        }
+
+        // 4. Logic: Hidden if DivideByDivisor is True
+        public partial class StreamDistanceSetting : SettingsSlider<int>
+        {
+            protected override void LoadComplete()
+            {
+                base.LoadComplete();
+                if (SettingSourceObject is OsuModRandomV2 mod)
+                {
+                    mod.DivideByDivisor.BindValueChanged(val =>
+                    {
+                        if (val.NewValue) Hide(); else Show();
+                    }, true);
+                }
+            }
+        }
+
+        // 5. Logic: Visible if SquareMod is True (Generic Int Slider)
+        public partial class SquareModIntSetting : SettingsSlider<int>
+        {
+            protected override void LoadComplete()
+            {
+                base.LoadComplete();
+                if (SettingSourceObject is OsuModRandomV2 mod)
+                {
+                    mod.SquareMod.BindValueChanged(val =>
+                    {
+                        if (val.NewValue) Show(); else Hide();
+                    }, true);
+                }
+            }
+        }
+
+        // 6. Logic: Visible if SquareMod is True (Generic Checkbox)
+        public partial class SquareModBoolSetting : SettingsCheckbox
+        {
+            protected override void LoadComplete()
+            {
+                base.LoadComplete();
+                if (SettingSourceObject is OsuModRandomV2 mod)
+                {
+                    mod.SquareMod.BindValueChanged(val =>
+                    {
+                        if (val.NewValue) Show(); else Hide();
+                    }, true);
+                }
+            }
+        }
+
+        // 7. Logic: Visible if SquareMod AND SquareModBreak are True
+        public partial class SquareModBreakIntervalSetting : SettingsSlider<int>
+        {
+            protected override void LoadComplete()
+            {
+                base.LoadComplete();
+                if (SettingSourceObject is OsuModRandomV2 mod)
+                {
+                    var updateVisibility = new Action(() =>
+                    {
+                        bool show = mod.SquareMod.Value && mod.SquareModBreak.Value;
+                        if (show) Show(); else Hide();
+                    });
+
+                    mod.SquareMod.BindValueChanged(_ => updateVisibility());
+                    mod.SquareModBreak.BindValueChanged(_ => updateVisibility(), true);
+                }
+            }
+        }
+
+        // 8. Logic: Visible if SquareMod is True AND SquareModFullMap is False
+        public partial class SquareModOffsetSetting : SettingsSlider<int>
+        {
+            protected override void LoadComplete()
+            {
+                base.LoadComplete();
+                if (SettingSourceObject is OsuModRandomV2 mod)
+                {
+                    var updateVisibility = new Action(() =>
+                    {
+                        bool show = mod.SquareMod.Value && !mod.SquareModFullMap.Value;
+                        if (show) Show(); else Hide();
+                    });
+
+                    mod.SquareMod.BindValueChanged(_ => updateVisibility());
+                    mod.SquareModFullMap.BindValueChanged(_ => updateVisibility(), true);
+                }
+            }
+        }
+
+        // 9. Logic: Same as Offset, but inheriting the Custom SliderBar type
+        public partial class SquareModCountSetting : SettingsSlider<int, SquareModObjectCountSliderBar>
+        {
+            protected override void LoadComplete()
+            {
+                base.LoadComplete();
+                if (SettingSourceObject is OsuModRandomV2 mod)
+                {
+                    var updateVisibility = new Action(() =>
+                    {
+                        bool show = mod.SquareMod.Value && !mod.SquareModFullMap.Value;
+                        if (show) Show(); else Hide();
+                    });
+
+                    mod.SquareMod.BindValueChanged(_ => updateVisibility());
+                    mod.SquareModFullMap.BindValueChanged(_ => updateVisibility(), true);
+                }
+            }
+        }
 
     public partial class SquareModObjectCountSliderBar : RoundedSliderBar<int>
     {
         public override LocalisableString TooltipText => Current.Value == 0 ? "No limit" : base.TooltipText;
     }
+    }
+
 }
