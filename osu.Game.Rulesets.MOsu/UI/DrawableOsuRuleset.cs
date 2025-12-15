@@ -21,6 +21,9 @@ using osu.Game.Rulesets.UI;
 using osu.Game.Scoring;
 using osu.Game.Screens.Play;
 using osuTK;
+using osu.Framework.Input.Events;
+using osuTK.Input;
+using osu.Framework.Logging;
 
 namespace osu.Game.Rulesets.MOsu.UI
 {
@@ -38,6 +41,40 @@ namespace osu.Game.Rulesets.MOsu.UI
             : base(ruleset, beatmap, mods)
         {
         }
+
+        [Resolved]
+        private IBindable<WorkingBeatmap> beatmap { get; set; } = null!;
+
+        protected override bool OnKeyDown(KeyDownEvent e)
+        {
+            if (e.Key == Key.Space)
+            {
+            Logger.Log($"Current beatmap: {beatmap.Value.BeatmapInfo.DifficultyName}");
+                // Find the first hit object to calculate where to skip to
+                // var firstObject = Objects.FirstOrDefault();
+            beatmap.Value.Track.Seek(15000);
+            IWorkingBeatmap bm = beatmap.Value;
+
+
+
+                // if (Objects.FirstOrDefault() is OsuHitObject first)
+                // {
+                //     // Calculate skip time: StartTime minus Preempt (approach time) or a fixed 2 seconds
+                //     // You mentioned 'time.Value' in your prompt, you can substitute this logic with that variable if you have it calculated elsewhere.
+                //     double targetTime = first.StartTime - Math.Max(2000, first.TimePreempt);
+
+                //     // Check if we are currently before that time to prevent seeking backwards or unnecessary seeking
+                //     if (beatmap.Value.Track.CurrentTime < targetTime)
+                //     {
+                //         beatmap.Value.Track.Seek(targetTime);
+                //         return true; // Input consumed
+                //     }
+                // }
+            }
+
+            return base.OnKeyDown(e);
+        }
+
 
         [BackgroundDependencyLoader]
         private void load(ReplayPlayer? replayPlayer)
