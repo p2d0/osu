@@ -24,10 +24,16 @@ using osuTK;
 using osu.Framework.Input.Events;
 using osuTK.Input;
 using osu.Framework.Logging;
+using osu.Game.Rulesets.MOsu.Scoring;
+using osu.Game.Input.Bindings;
+using osu.Framework.Input.Bindings;
+using osu.Game.Audio;
+using osu.Framework.Threading;
+using System.Reflection;
 
 namespace osu.Game.Rulesets.MOsu.UI
 {
-    public partial class DrawableOsuRuleset : DrawableRuleset<OsuHitObject>
+    public partial class DrawableOsuRuleset : DrawableRuleset<OsuHitObject>, ISamplePlaybackDisabler
     {
         private Bindable<bool>? cursorHideEnabled;
 
@@ -44,41 +50,106 @@ namespace osu.Game.Rulesets.MOsu.UI
 
         [Resolved]
         private IBindable<WorkingBeatmap> beatmap { get; set; } = null!;
+        [Resolved]
+        private GameplayClockContainer GameplayClockContainer { get; set; } = null!;
+        // private BreakTracker breakTracker;
 
-        protected override bool OnKeyDown(KeyDownEvent e)
+        [Resolved]
+        private Player Player { get; set; } = null!;
+
+        private readonly Bindable<bool> samplePlaybackDisabled = new BindableBool(true);
+        IBindable<bool> ISamplePlaybackDisabler.SamplePlaybackDisabled => samplePlaybackDisabled;
+
+
+        // public bool OnPressed(KeyBindingPressEvent<GlobalAction> e)
+        // {
+        //     if (e.Repeat)
+        //         return false;
+
+        //     switch (e.Action)
+        //     {
+        //         case GlobalAction.SkipCutscene:
+        //             BreakTracker breakTracker = (BreakTracker)FrameStableComponents.First(p => p is BreakTracker);
+        //             //     beatmap.Value.Track.Seek(breakTracker.CurrentPeriod.Value.Value.End);
+        //             // Schedule(() => {
+        //             if(beatmap.Value.Track.IsLoaded && breakTracker.CurrentPeriod.Value.HasValue){
+        //                 // samplePlaybackDisabled.Value = true;
+        //                 Player.Seek(breakTracker.CurrentPeriod.Value.Value.End);
+        //                 // (GameplayClockContainer as MasterGameplayClockContainer)?.Start();
+        //                 // samplePlaybackDisabled.Value = FrameStableClock.IsCatchingUp.Value || GameplayClockContainer.IsPaused.Value;
+        //             }
+        //             // });
+        //             return true;
+        //     }
+
+        //     return false;
+        // }
+
+        // public void OnReleased(KeyBindingReleaseEvent<GlobalAction> e)
+        // {
+        // }
+
+        // protected override bool OnKeyDown(KeyDownEvent e)
+        // {
+        //     if (e.Key == Key.Space)
+        //     {
+        //         BreakTracker breakTracker = (BreakTracker)FrameStableComponents.First(p => p is BreakTracker);
+        //         if(breakTracker.CurrentPeriod.Value.HasValue)
+        //             beatmap.Value.Track.Seek(breakTracker.CurrentPeriod.Value.Value.End);
+        //     }
+
+        //     return base.OnKeyDown(e);
+        // }
+
+        private ScheduledDelegate? frameStablePlaybackResetDelegate;
+
+        private static readonly PropertyInfo frameStablePlaybackProperty =
+            typeof(DrawableRuleset).GetProperty("FrameStablePlayback", BindingFlags.Instance | BindingFlags.NonPublic);
+
+        private void SafeSeek(double time)
         {
-            if (e.Key == Key.Space)
-            {
-            Logger.Log($"Current beatmap: {beatmap.Value.BeatmapInfo.DifficultyName}");
-                // Find the first hit object to calculate where to skip to
-                // var firstObject = Objects.FirstOrDefault();
-            beatmap.Value.Track.Seek(15000);
-            IWorkingBeatmap bm = beatmap.Value;
+            if (GameplayClockContainer == null || frameStablePlaybackProperty == null)
+                return;
 
+            // Cancel any pending frame-stable restore
+            if (frameStablePlaybackResetDelegate?.Cancelled == false && !frameStablePlaybackResetDelegate.Completed)
+                frameStablePlaybackResetDelegate.RunTask();
 
+            // Read current FrameStablePlayback state via reflection
+            bool wasFrameStable = (bool)frameStablePlaybackProperty.GetValue(this);
 
-                // if (Objects.FirstOrDefault() is OsuHitObject first)
-                // {
-                //     // Calculate skip time: StartTime minus Preempt (approach time) or a fixed 2 seconds
-                //     // You mentioned 'time.Value' in your prompt, you can substitute this logic with that variable if you have it calculated elsewhere.
-                //     double targetTime = first.StartTime - Math.Max(2000, first.TimePreempt);
+            // Disable frame-stable playback
+            frameStablePlaybackProperty.SetValue(this, false);
 
-                //     // Check if we are currently before that time to prevent seeking backwards or unnecessary seeking
-                //     if (beatmap.Value.Track.CurrentTime < targetTime)
-                //     {
-                //         beatmap.Value.Track.Seek(targetTime);
-                //         return true; // Input consumed
-                //     }
-                // }
-            }
+            // Perform the seek
+            GameplayClockContainer.Seek(time);
 
-            return base.OnKeyDown(e);
+            // Schedule restore of frame-stable playback after children process
+            frameStablePlaybackResetDelegate = ScheduleAfterChildren(() =>
+                                                                     frameStablePlaybackProperty.SetValue(this, wasFrameStable));
         }
-
 
         [BackgroundDependencyLoader]
         private void load(ReplayPlayer? replayPlayer)
         {
+            if (GameplayClockContainer != null && frameStablePlaybackProperty != null)
+            {
+                SkipOverlay skipOverlay;
+                BreakTracker breakTracker = (BreakTracker)FrameStableComponents.First(p => p is BreakTracker);
+                Overlays.Add(skipOverlay = new SkipOverlay {
+                        Clock = FrameStableClock,
+                        ProcessCustomClock = false,
+                        BreakTracker = breakTracker,
+                        Depth = float.NegativeInfinity
+                    });
+
+                skipOverlay.RequestSkip = () => {
+                    Logger.Log("SAFE SEEK BRO");
+                    if(breakTracker.CurrentPeriod.Value.HasValue)
+                        SafeSeek(breakTracker.CurrentPeriod.Value.Value.End);
+                };
+            }
+
             if (replayPlayer != null)
             {
                 ReplayAnalysisOverlay analysisOverlay;
