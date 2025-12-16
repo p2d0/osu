@@ -49,6 +49,7 @@ using osu.Game.Online.API;
 using osu.Framework.Testing;
 using osu.Game.Rulesets.MOsu.Extensions;
 using osu.Game.Rulesets.MOsu.UI.Toolbar;
+using osu.Game.Collections;
 
 namespace osu.Game.Rulesets.MOsu.UI
 {
@@ -134,6 +135,27 @@ namespace osu.Game.Rulesets.MOsu.UI
                     {
                         performer?.PerformFromScreen(screen => screen.Push(new ModPresetFileImportScreen()));
                     }
+                },
+                new OsuSpriteText
+                {
+                    Text = "Collections",
+                    Margin = new MarginPadding { Top = 20, Bottom = 5 },
+                    Font = OsuFont.GetFont(weight: FontWeight.Bold)
+                },
+                new SettingsButton
+                {
+                    Text = "Export collections to file",
+                    TooltipText = "Saves all collections to exports/collections.json",
+                    Action = exportCollections
+                },
+                new SettingsButton
+                {
+                    Text = "Import collections from file",
+                    TooltipText = "Open file browser to select a collection .json",
+                    Action = () =>
+                    {
+                        performer?.PerformFromScreen(screen => screen.Push(new CollectionImportScreen()));
+                    }
                 }
             };
         }
@@ -173,6 +195,47 @@ namespace osu.Game.Rulesets.MOsu.UI
                 }
 
                 notifications?.Post(new SimpleNotification { Text = $"Exported {presets.Count} presets to {filename}!" });
+                exportStorage.PresentFileExternally(filename);
+            }
+            catch (Exception ex)
+            {
+                notifications?.Post(new SimpleErrorNotification { Text = $"Export failed: {ex.Message}" });
+            }
+        }
+
+        private void exportCollections()
+        {
+            try
+            {
+                // 1. Get all collections from Realm
+                var collections = realm.Run(r => r.All<BeatmapCollection>().Detach())
+                    .Select(c => new CollectionTransferObject
+                    {
+                    Name = c.Name,
+                    BeatmapMD5Hashes = c.BeatmapMD5Hashes.ToList()
+                    })
+                    .ToList();
+
+                if (collections.Count == 0)
+                {
+                    notifications?.Post(new SimpleNotification { Text = "No collections found to export." });
+                    return;
+                }
+
+                // 2. Serialize
+                string json = JsonConvert.SerializeObject(collections, Formatting.Indented);
+
+                // 3. Write to file
+                var exportStorage = storage.GetStorageForDirectory("exports");
+                const string filename = "collections.json";
+
+                using (var stream = exportStorage.CreateFileSafely(filename))
+                using (var writer = new StreamWriter(stream))
+                {
+                    writer.Write(json);
+                }
+
+                notifications?.Post(new SimpleNotification { Text = $"Exported {collections.Count} collections to {filename}!" });
                 exportStorage.PresentFileExternally(filename);
             }
             catch (Exception ex)
