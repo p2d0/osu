@@ -30,10 +30,12 @@ using osu.Framework.Input.Bindings;
 using osu.Game.Audio;
 using osu.Framework.Threading;
 using System.Reflection;
+using System.Threading.Tasks;
+using osu.Game.Database;
 
 namespace osu.Game.Rulesets.MOsu.UI
 {
-    public partial class DrawableOsuRuleset : DrawableRuleset<OsuHitObject>, ISamplePlaybackDisabler
+    public partial class DrawableOsuRuleset : DrawableRuleset<OsuHitObject>
     {
         private Bindable<bool>? cursorHideEnabled;
 
@@ -52,13 +54,9 @@ namespace osu.Game.Rulesets.MOsu.UI
         private IBindable<WorkingBeatmap> beatmap { get; set; } = null!;
         [Resolved]
         private GameplayClockContainer GameplayClockContainer { get; set; } = null!;
-        // private BreakTracker breakTracker;
 
         [Resolved]
-        private Player Player { get; set; } = null!;
-
-        private readonly Bindable<bool> samplePlaybackDisabled = new BindableBool(true);
-        IBindable<bool> ISamplePlaybackDisabler.SamplePlaybackDisabled => samplePlaybackDisabled;
+        private BeatmapDifficultyCache difficultyCache { get; set; }
 
 
         // public bool OnPressed(KeyBindingPressEvent<GlobalAction> e)
@@ -129,27 +127,10 @@ namespace osu.Game.Rulesets.MOsu.UI
                                                                      frameStablePlaybackProperty.SetValue(this, wasFrameStable));
         }
 
+
         [BackgroundDependencyLoader]
-        private void load(ReplayPlayer? replayPlayer)
+        private void load(ReplayPlayer? replayPlayer, Player? player,RealmAccess realm, LocalUserManager localUserManager)
         {
-            if (GameplayClockContainer != null && frameStablePlaybackProperty != null)
-            {
-                SkipOverlay skipOverlay;
-                BreakTracker breakTracker = (BreakTracker)FrameStableComponents.First(p => p is BreakTracker);
-                Overlays.Add(skipOverlay = new SkipOverlay {
-                        Clock = FrameStableClock,
-                        ProcessCustomClock = false,
-                        BreakTracker = breakTracker,
-                        Depth = float.NegativeInfinity
-                    });
-
-                skipOverlay.RequestSkip = () => {
-                    Logger.Log("SAFE SEEK BRO");
-                    if(breakTracker.CurrentPeriod.Value.HasValue)
-                        SafeSeek(breakTracker.CurrentPeriod.Value.Value.End);
-                };
-            }
-
             if (replayPlayer != null)
             {
                 ReplayAnalysisOverlay analysisOverlay;
@@ -163,6 +144,53 @@ namespace osu.Game.Rulesets.MOsu.UI
                 // Let's wait for someone to report an issue before spending too much time on it.
                 cursorHideEnabled.BindValueChanged(enabled => Playfield.Cursor.FadeTo(enabled.NewValue ? 0 : 1), true);
             }
+
+            if (GameplayClockContainer != null && frameStablePlaybackProperty != null)
+            {
+                SkipOverlay skipOverlay;
+                BreakTracker breakTracker = (BreakTracker)FrameStableComponents.First(p => p is BreakTracker);
+                Overlays.Add(skipOverlay = new SkipOverlay {
+                        Clock = FrameStableClock,
+                        ProcessCustomClock = false,
+                        BreakTracker = breakTracker,
+                        Depth = float.NegativeInfinity
+                    });
+
+                skipOverlay.RequestSkip = () => {
+                    if(breakTracker.CurrentPeriod.Value.HasValue)
+                        SafeSeek(breakTracker.CurrentPeriod.Value.Value.End);
+                };
+            }
+
+            if(player != null){
+                player.OnShowingResults += async () => {
+                    var scoreInfo = player.Score.ScoreInfo;
+                    var pp = await calculatePP(scoreInfo).ConfigureAwait(false);
+                    realm.Write(r => {
+                        var score = r.Find<ScoreInfo>(scoreInfo.ID);
+                        if(score != null)
+                            score.PP = pp;
+                        }
+                    );
+                    await localUserManager.UpdateUserStatisticsAsync(Ruleset.RulesetInfo).ConfigureAwait(false);
+                };
+            }
+
+        }
+
+        private async Task<double?> calculatePP(ScoreInfo scoreInfo){
+            var attributes = await difficultyCache.GetDifficultyAsync(scoreInfo.BeatmapInfo!, scoreInfo.Ruleset, scoreInfo.Mods).ConfigureAwait(false);
+            var performanceCalculator = scoreInfo.Ruleset.CreateInstance().CreatePerformanceCalculator();
+
+            // Performance calculation requires the beatmap and ruleset to be locally available. If not, return a default value.
+            if (attributes?.DifficultyAttributes == null || performanceCalculator == null)
+                return null;
+
+            var result = await performanceCalculator.CalculateAsync(scoreInfo, attributes.Value.DifficultyAttributes, default).ConfigureAwait(false);
+
+            // scoreInfo.PP = result.Total;
+
+            return result.Total;
         }
 
         public override DrawableHitObject<OsuHitObject>? CreateDrawableRepresentation(OsuHitObject h) => null;

@@ -1,6 +1,7 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
 using osu.Framework.Allocation;
 using osu.Framework.Development;
 using osu.Framework.Graphics;
@@ -71,8 +72,9 @@ namespace osu.Game.Overlays.Settings
 
                     modes.Add(icon);
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Logger.Error(ex, $"RIPAS {ruleset.Name}.");
                     Logger.Log($"Could not create ruleset icon for {ruleset.Name}. Please check for an update from the developer.", level: LogLevel.Error);
                 }
             }

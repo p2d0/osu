@@ -38,6 +38,18 @@
             "console": "internalConsole"
         },
         {
+            "name": "MOsu! (Tests, Debug)",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "dotnet",
+            "args": [
+                "${workspaceRoot}/osu.Game.Rulesets.MOsu.Tests/bin/Debug/net8.0/osu.Game.Rulesets.MOsu.Tests.dll"
+            ],
+            "cwd": "${workspaceRoot}",
+            "preLaunchTask": "Build MOSU tests (Debug)",
+            "console": "internalConsole"
+        },
+        {
             "name": "osu! (Tests, Release)",
             "type": "coreclr",
             "request": "launch",

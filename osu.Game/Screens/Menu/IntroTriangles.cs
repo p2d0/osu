@@ -342,8 +342,9 @@ namespace osu.Game.Screens.Menu
 
                             Add(icon);
                         }
-                        catch
+                        catch (Exception ex)
                         {
+                            Logger.Error(ex, $"RIPAS {ruleset.Name}.");
                             Logger.Log($"Could not create ruleset icon for {ruleset.Name}. Please check for an update from the developer.", level: LogLevel.Error);
                         }
                     }

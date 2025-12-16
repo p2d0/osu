@@ -44,11 +44,18 @@ using osu.Game.Localisation;
 using osu.Game.Screens;
 using osu.Game.Screens.Import;
 using osu.Game.Screens.Utility;
+using osu.Game.Rulesets.MOsu.UI.LocalUser;
+using osu.Game.Online.API;
+using osu.Framework.Testing;
+using osu.Game.Rulesets.MOsu.Extensions;
+using osu.Game.Rulesets.MOsu.UI.Toolbar;
 
 namespace osu.Game.Rulesets.MOsu.UI
 {
     public partial class OsuSettingsSubsection : RulesetSettingsSubsection
     {
+        private Ruleset ruleset;
+
         protected override LocalisableString Header => "osu!";
 
         [Resolved]
@@ -66,13 +73,21 @@ namespace osu.Game.Rulesets.MOsu.UI
         public OsuSettingsSubsection(Ruleset ruleset)
             : base(ruleset)
         {
+            this.ruleset = ruleset;
         }
+        private LocalUserProfileOverlay? localUserProfileOverlay;
+        private ChangelogOverlay? changelogOverlay;
+        // private ToolbarLocalUserButton? localUserButton;
 
         [BackgroundDependencyLoader]
-        private void load()
+        private void load(IAPIProvider api, OsuGame game,GameHost host)
         {
-            var config = (OsuRulesetConfigManager)Config;
+            // LocalUserManager localUserManager;
+            // host.Dependencies.Cache(localUserManager = new LocalUserManager((OsuRuleset)ruleset, realm, api));
 
+            // game.GetToolbarContainer().Add(new ToolbarLocalUserButton());
+
+            var config = (OsuRulesetConfigManager)Config;
             Children = new Drawable[]
             {
                 new SettingsCheckbox
@@ -101,7 +116,6 @@ namespace osu.Game.Rulesets.MOsu.UI
                     LabelText = RulesetSettingsStrings.PlayfieldBorderStyle,
                     Current = config.GetBindable<PlayfieldBorderStyle>(OsuRulesetSetting.PlayfieldBorderStyle),
                 },
-
                 // --- Preset Export ---
                 new SettingsButton
                 {

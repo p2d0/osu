@@ -12,11 +12,11 @@
     <IsPackable>true</IsPackable>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="ppy.osu.Game" Version="2025.1209.0" />
-  </ItemGroup>
-
-  <!-- <ItemGroup Label="Project References"> -->
-  <!--   <ProjectReference Include="..\osu.Game\osu.Game.csproj" /> -->
+  <!-- <ItemGroup> -->
+  <!--   <PackageReference Include="ppy.osu.Game" Version="2025.1209.0" /> -->
   <!-- </ItemGroup> -->
+
+  <ItemGroup Label="Project References">
+    <ProjectReference Include="..\osu.Game\osu.Game.csproj" />
+  </ItemGroup>
 </Project>

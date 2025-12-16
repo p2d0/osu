@@ -47,6 +47,20 @@
             "problemMatcher": "$msCompile"
         },
         {
+            "label": "Build MOSU tests (Debug)",
+            "type": "shell",
+            "command": "dotnet",
+            "args": [
+                "build",
+                "osu.Game.Rulesets.MOsu.Tests",
+                "-p:GenerateFullPaths=true",
+                "-m",
+                "-verbosity:m"
+            ],
+            "group": "build",
+            "problemMatcher": "$msCompile"
+        },
+        {
             "label": "Build tests (Release)",
             "type": "shell",
             "command": "dotnet",
