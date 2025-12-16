@@ -290,11 +290,8 @@ namespace osu.Game.Rulesets.MOsu.UI
                                 processedSets.Add(onlineSet.OnlineID);
                                 queuedCount++;
 
-                                Schedule(() =>
-                                {
-                                    if (downloader.GetExistingDownload(onlineSet) == null)
-                                        downloader.Download(onlineSet);
-                                });
+                                if (downloader.GetExistingDownload(onlineSet) == null)
+                                    downloader.Download(onlineSet);
                             }
                         }
                         else
