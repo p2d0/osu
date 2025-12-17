@@ -50,7 +50,9 @@ namespace osu.Game.Rulesets.MOsu.UI
         public BeatmapModPresetWedge()
         {
             RelativeSizeAxes = Axes.Both;
-            Padding = new MarginPadding { Bottom = 20, Left = 20};
+            Anchor = Anchor.BottomLeft;
+            Origin = Anchor.BottomLeft;
+            Padding = new MarginPadding { Bottom = 20, Left = 40};
         }
 
         [BackgroundDependencyLoader]
@@ -253,8 +255,8 @@ namespace osu.Game.Rulesets.MOsu.UI
                     {
                         AutoSizeAxes = Axes.Both,
                         Direction = FillDirection.Vertical,
-                        Anchor = Anchor.CentreLeft,
-                        Origin = Anchor.CentreLeft,
+                        Anchor = Anchor.CentreRight,
+                        Origin = Anchor.CentreRight,
                         Children = new Drawable[]
                         {
                             new FillFlowContainer
@@ -265,12 +267,6 @@ namespace osu.Game.Rulesets.MOsu.UI
                                 Children = new Drawable[]
                                 {
                                     // 3. Add the Star Rating Display
-                                    starRatingDisplay = new StarRatingDisplay(default, size: StarRatingDisplaySize.Small)
-                                    {
-                                        Anchor = Anchor.CentreLeft,
-                                        Origin = Anchor.CentreLeft,
-                                        Scale = new Vector2(0.8f), // Adjust scale to fit 50px height comfortably
-                                    },
                                     new FillFlowContainer
                                     {
                                         AutoSizeAxes = Axes.Both,
@@ -284,7 +280,13 @@ namespace osu.Game.Rulesets.MOsu.UI
                                             Anchor = Anchor.CentreLeft,
                                             Origin = Anchor.CentreLeft,
                                         })
-                                    }
+                                    },
+                                    starRatingDisplay = new StarRatingDisplay(default, size: StarRatingDisplaySize.Small)
+                                    {
+                                        Anchor = Anchor.CentreLeft,
+                                        Origin = Anchor.CentreLeft,
+                                        Scale = new Vector2(0.8f), // Adjust scale to fit 50px height comfortably
+                                    },
                                 }
                             }
                         }

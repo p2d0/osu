@@ -85,7 +85,9 @@ namespace osu.Game.Rulesets.MOsu.Tests
                     {
                         BeatmapMD5Hash = beatmapHash,
                         Ruleset = r.Find<RulesetInfo>(working.BeatmapInfo.Ruleset.ShortName) ?? working.BeatmapInfo.Ruleset,
-                        Mods = new Mod[] { new OsuModDoubleTime(), new OsuModHardRock() }
+                        Mods = new Mod[] { new OsuModDoubleTime() {SpeedChange = {Value = 2.3f}}, new OsuModHidden() {
+                                OnlyFadeApproachCircles = { Value = true }
+                            } }
                     });
 
                     r.Add(new BeatmapModPreset

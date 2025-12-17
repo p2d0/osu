@@ -20,6 +20,8 @@ namespace osu.Game.Rulesets.Mods
         [Indexed]
         public string BeatmapMD5Hash { get; set; } = string.Empty;
 
+        public string Name { get; set; } = string.Empty;
+
         /// <summary>
         /// The ruleset that the preset is valid for.
         /// </summary>
