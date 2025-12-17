@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Newtonsoft.Json;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Extensions;
@@ -9,15 +10,23 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Cursor;
 using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Localisation;
+using osu.Framework.Logging;
+using osu.Framework.Platform;
+using osu.Game.Beatmaps;
 using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Graphics.UserInterfaceV2;
 using osu.Game.Localisation;
+using osu.Game.Online.API;
+using osu.Game.Overlays;
+using osu.Game.Overlays.Notifications;
 using osu.Game.Rulesets.Mods;
+using osu.Game.Rulesets.MOsu.Database;
 using osu.Game.Screens.Select;
 using osu.Game.Screens.Select.Leaderboards;
 using osuTK;
+using Realms;
 using static osu.Game.Screens.SelectV2.BeatmapDetailsArea;
 
 namespace osu.Game.Rulesets.MOsu.UI
@@ -26,124 +35,277 @@ namespace osu.Game.Rulesets.MOsu.UI
     {
         public partial class Header : CompositeDrawable
         {
-            private WedgeSelector<Selection> tabControl = null!;
-            private FillFlowContainer leaderboardControls = null!;
+        private WedgeSelector<Selection> tabControl = null!;
+        private FillFlowContainer leaderboardControls = null!;
+        private FillFlowContainer modPresetControls = null!;
 
-            public Action<string>? SaveCurrentModsAction;
-            private SavePresetButton saveModsButton = null!;
-            private FillFlowContainer modPresetControls = null!; // New container for Save button
+        // Buttons
+        public Action<string>? SaveCurrentModsAction;
+        private SavePresetButton saveModsButton = null!;
+        private ShearedButton exportButton = null!;
+        private ShearedButton importButton = null!;
 
-            private ShearedDropdown<BeatmapLeaderboardScope> scopeDropdown = null!;
-            private ShearedDropdown<LeaderboardSortMode> sortDropdown = null!;
-            private ShearedToggleButton selectedModsToggle = null!;
+        private ShearedDropdown<BeatmapLeaderboardScope> scopeDropdown = null!;
+        private ShearedDropdown<LeaderboardSortMode> sortDropdown = null!;
+        private ShearedToggleButton selectedModsToggle = null!;
 
-            [Resolved]
-            private Bindable<IReadOnlyList<Mod>> selectedMods { get; set; } = null!;
+        [Resolved]
+        private Bindable<IReadOnlyList<Mod>> selectedMods { get; set; } = null!;
 
-            public IBindable<Selection> Type => tabControl.Current;
+        [Resolved]
+        private Bindable<RulesetInfo> ruleset { get; set; } = null!;
 
-            public IBindable<BeatmapLeaderboardScope> Scope => scopeDropdown.Current;
+        // NEW DEPENDENCIES
+        [Resolved]
+        private MOsuRealmAccess realm { get; set; } = null!;
+        [Resolved]
+        private IBindable<WorkingBeatmap> beatmap { get; set; } = null!;
+        [Resolved]
+        private Clipboard clipboard { get; set; } = null!;
+        // [Resolved]
+        // private OsuGame game { get; set; } = null!;
 
-            private readonly Bindable<BeatmapDetailTab> configDetailTab = new Bindable<BeatmapDetailTab>();
+        [Resolved]
+        private INotificationOverlay notifications { get; set; } = null!;
 
-            public IBindable<LeaderboardSortMode> Sorting => sortDropdown.Current;
+        public IBindable<Selection> Type => tabControl.Current;
+        public IBindable<BeatmapLeaderboardScope> Scope => scopeDropdown.Current;
+        private readonly Bindable<BeatmapDetailTab> configDetailTab = new Bindable<BeatmapDetailTab>();
+        public IBindable<LeaderboardSortMode> Sorting => sortDropdown.Current;
+        private readonly Bindable<LeaderboardSortMode> configLeaderboardSortMode = new Bindable<LeaderboardSortMode>();
+        public IBindable<bool> FilterBySelectedMods => selectedModsToggle.Active;
 
-            private readonly Bindable<LeaderboardSortMode> configLeaderboardSortMode = new Bindable<LeaderboardSortMode>();
-
-            public IBindable<bool> FilterBySelectedMods => selectedModsToggle.Active;
-
-            [BackgroundDependencyLoader]
-            private void load(OsuConfigManager config)
+        [BackgroundDependencyLoader]
+        private void load(OsuConfigManager config)
+        {
+            InternalChildren = new Drawable[]
             {
-                InternalChildren = new Drawable[]
+                new Container
                 {
-                    new Container
+                    RelativeSizeAxes = Axes.Both,
+                    Padding = new MarginPadding { Left = osu.Game.Screens.SelectV2.SongSelect.WEDGE_CONTENT_MARGIN, Right = 5f },
+                    Children = new Drawable[]
                     {
-                        RelativeSizeAxes = Axes.Both,
-                        Padding = new MarginPadding { Left = osu.Game.Screens.SelectV2.SongSelect.WEDGE_CONTENT_MARGIN, Right = 5f },
-                        Children = new Drawable[]
+                        tabControl = new WedgeSelector<Selection>(20f)
                         {
-                            tabControl = new WedgeSelector<Selection>(20f)
+                            Anchor = Anchor.CentreLeft,
+                            Origin = Anchor.CentreLeft,
+                            Width = 200,
+                            Height = 22,
+                            Margin = new MarginPadding { Top = 2f },
+                            IsSwitchable = true,
+                        },
+                        // 1. Leaderboard Controls (Ranking Tab)
+                        leaderboardControls = new FillFlowContainer
+                        {
+                            Anchor = Anchor.CentreRight,
+                            Origin = Anchor.CentreRight,
+                            RelativeSizeAxes = Axes.X,
+                            Height = 30,
+                            Spacing = new Vector2(5f, 0f),
+                            Direction = FillDirection.Horizontal,
+                            Padding = new MarginPadding { Left = 258 },
+                            Children = new Drawable[]
                             {
-                                Anchor = Anchor.CentreLeft,
-                                Origin = Anchor.CentreLeft,
-                                Width = 200,
-                                Height = 22,
-                                Margin = new MarginPadding { Top = 2f },
-                                IsSwitchable = true,
-                            },
-                            // 1. Leaderboard Controls (Ranking Tab)
-                            leaderboardControls = new FillFlowContainer
-                            {
-                                Anchor = Anchor.CentreRight,
-                                Origin = Anchor.CentreRight,
-                                RelativeSizeAxes = Axes.X,
-                                Height = 30,
-                                Spacing = new Vector2(5f, 0f),
-                                Direction = FillDirection.Horizontal,
-                                Padding = new MarginPadding { Left = 258 },
-                                Children = new Drawable[]
+                                selectedModsToggle = new ShearedToggleButton
                                 {
-                                    selectedModsToggle = new ShearedToggleButton
-                                    {
-                                        Anchor = Anchor.CentreRight,
-                                        Origin = Anchor.CentreRight,
-                                        Text = UserInterfaceStrings.SelectedMods,
-                                        Height = 30f,
-                                        Margin = new MarginPadding { Left = -9.2f },
-                                    },
-                                    sortDropdown = new ShearedDropdown<LeaderboardSortMode>(BeatmapLeaderboardWedgeStrings.Sort)
-                                    {
-                                        Anchor = Anchor.TopRight,
-                                        Origin = Anchor.TopRight,
-                                        RelativeSizeAxes = Axes.X,
-                                        Width = 0.4f,
-                                        Items = Enum.GetValues<LeaderboardSortMode>(),
-                                    },
-                                    scopeDropdown = new ScopeDropdown
-                                    {
-                                        Anchor = Anchor.TopRight,
-                                        Origin = Anchor.TopRight,
-                                        RelativeSizeAxes = Axes.X,
-                                        Width = 0.4f,
-                                        Current = { Value = BeatmapLeaderboardScope.Global },
-                                    },
-                                    // REMOVED modPresetControls from here
+                                    Anchor = Anchor.CentreRight,
+                                    Origin = Anchor.CentreRight,
+                                    Text = UserInterfaceStrings.SelectedMods,
+                                    Height = 30f,
+                                    Margin = new MarginPadding { Left = -9.2f },
+                                },
+                                sortDropdown = new ShearedDropdown<LeaderboardSortMode>(BeatmapLeaderboardWedgeStrings.Sort)
+                                {
+                                    Anchor = Anchor.TopRight,
+                                    Origin = Anchor.TopRight,
+                                    RelativeSizeAxes = Axes.X,
+                                    Width = 0.4f,
+                                    Items = Enum.GetValues<LeaderboardSortMode>(),
+                                },
+                                scopeDropdown = new ScopeDropdown
+                                {
+                                    Anchor = Anchor.TopRight,
+                                    Origin = Anchor.TopRight,
+                                    RelativeSizeAxes = Axes.X,
+                                    Width = 0.4f,
+                                    Current = { Value = BeatmapLeaderboardScope.Global },
                                 },
                             },
-                            // 2. Mod Preset Controls (Mods Tab) - MOVED HERE
-                            modPresetControls = new FillFlowContainer
+                        },
+                        // 2. Mod Preset Controls (Mods Tab)
+                        modPresetControls = new FillFlowContainer
+                        {
+                            Anchor = Anchor.CentreRight,
+                            Origin = Anchor.CentreRight,
+                            AutoSizeAxes = Axes.X, // Changed to AutoSize to fit buttons tightly
+                            Height = 30,
+                            Spacing = new Vector2(5f, 0f),
+                            Direction = FillDirection.Horizontal,
+                            Alpha = 0,
+                            Children = new Drawable[]
                             {
-                                Anchor = Anchor.CentreRight,
-                                Origin = Anchor.CentreRight,
-                                RelativeSizeAxes = Axes.X, // Changed to X to match layout
-                                Height = 30,
-                                Spacing = new Vector2(5f, 0f),
-                                Direction = FillDirection.Horizontal,
-                                Padding = new MarginPadding { Left = 258 }, // Added padding to avoid overlapping the tabs
-                                Alpha = 0,
-                                Children = new Drawable[]
+                                importButton = new ShearedButton(30f)
                                 {
-                                    saveModsButton = new SavePresetButton(30f)
-                                    {
-                                        Anchor = Anchor.CentreRight,
-                                        Origin = Anchor.CentreRight,
-                                        Text = "Save Preset",
-                                        Height = 30f,
-                                        Margin = new MarginPadding { Left = -9.2f },
-                                        Width = 100f,
-                                        SaveAction = (name) => SaveCurrentModsAction?.Invoke(name)
-                                    }
+                                    Anchor = Anchor.CentreRight,
+                                    Origin = Anchor.CentreRight,
+                                    Text = "Import",
+                                    Height = 30f,
+                                    Width = 70f,
+                                    Action = importPresets
+                                },
+                                exportButton = new ShearedButton(30f)
+                                {
+                                    Anchor = Anchor.CentreRight,
+                                    Origin = Anchor.CentreRight,
+                                    Text = "Export",
+                                    Height = 30f,
+                                    Width = 70f,
+                                    Action = exportPresets
+                                },
+                                saveModsButton = new SavePresetButton(30f)
+                                {
+                                    Anchor = Anchor.CentreRight,
+                                    Origin = Anchor.CentreRight,
+                                    Text = "Save New",
+                                    Height = 30f,
+                                    Margin = new MarginPadding { Left = -9.2f },
+                                    Width = 90f,
+                                    SaveAction = (name) => SaveCurrentModsAction?.Invoke(name)
                                 }
                             }
-                        },
+                        }
                     },
-                };
+                },
+            };
 
-                config.BindWith(OsuSetting.BeatmapDetailTab, configDetailTab);
-                config.BindWith(OsuSetting.BeatmapLeaderboardSortMode, configLeaderboardSortMode);
-                config.BindWith(OsuSetting.BeatmapDetailModsFilter, selectedModsToggle.Active);
+            config.BindWith(OsuSetting.BeatmapDetailTab, configDetailTab);
+            config.BindWith(OsuSetting.BeatmapLeaderboardSortMode, configLeaderboardSortMode);
+            config.BindWith(OsuSetting.BeatmapDetailModsFilter, selectedModsToggle.Active);
+        }
+
+        #region Import / Export Logic
+
+        private void exportPresets()
+        {
+            var currentHash = beatmap.Value.BeatmapInfo.MD5Hash;
+
+            // 1. Fetch presets for current map
+            var presets = realm.Run(r => r.All<BeatmapModPreset>()
+                .Filter("BeatmapMD5Hash == $0 && Ruleset.ShortName == $1", currentHash, ruleset.Value.ShortName)
+                .Detach() // Detach to allow serialization
+                .ToList());
+
+            if (!presets.Any())
+            {
+                notifications.Post(new SimpleNotification
+                {
+                    Text = "No presets found for this beatmap to export."
+                });
+                return;
             }
+
+            // 2. Convert to DTO
+            var exportList = presets.Select(p => new PresetExportDto
+            {
+                Name = p.Name,
+                RulesetShortName = p.Ruleset.ShortName,
+                Mods = p.Mods.Select(m => new APIMod(m)).ToList()
+            }).ToList();
+
+            // 3. Serialize
+            try
+            {
+                string json = JsonConvert.SerializeObject(exportList, Formatting.Indented);
+                clipboard.SetText(json);
+
+                // Visual feedback
+                exportButton.FlashColour(Colour4.Green, 500);
+                notifications.Post(new SimpleNotification
+                {
+                    Text = $"Copied {exportList.Count} presets to clipboard!"
+                });
+            }
+            catch (Exception ex)
+            {
+                notifications.Post(new SimpleErrorNotification
+                {
+                    Text = $"Failed to export: {ex.Message}"
+                });
+            }
+        }
+
+        private void importPresets()
+        {
+            string json = clipboard.GetText();
+
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                notifications.Post(new SimpleErrorNotification { Text = "Clipboard is empty." });
+                return;
+            }
+
+            try
+            {
+                // 1. Deserialize
+                var importedList = JsonConvert.DeserializeObject<List<PresetExportDto>>(json);
+
+                if (importedList == null || !importedList.Any())
+                    throw new Exception("No valid presets found in clipboard data.");
+
+                var currentHash = beatmap.Value.BeatmapInfo.MD5Hash;
+                int addedCount = 0;
+
+                // 2. Write to Realm
+                realm.Write(r =>
+                {
+                    foreach (var dto in importedList)
+                    {
+                        // Find ruleset
+                        var ruleset = r.Find<RulesetInfo>(dto.RulesetShortName);
+                        if (ruleset == null) continue; // Skip if ruleset doesn't exist
+
+                        // Convert APIMods back to Mod instances to ensure compatibility
+                        // Then back to APIMod for storage (managed by the Preset object logic)
+                        var rulesetInstance = ruleset.CreateInstance();
+                        var modList = dto.Mods.Select(m => m.ToMod(rulesetInstance)).ToList();
+
+                        r.Add(new BeatmapModPreset
+                        {
+                            BeatmapMD5Hash = currentHash, // Assign to CURRENT map
+                            Ruleset = ruleset,
+                            Name = dto.Name,
+                            Mods = modList
+                        });
+                        addedCount++;
+                    }
+                });
+
+                importButton.FlashColour(Colour4.Green, 500);
+                notifications.Post(new SimpleNotification
+                {
+                    Text = $"Successfully imported {addedCount} presets!"
+                });
+            }
+            catch (Exception ex)
+            {
+                notifications.Post(new SimpleErrorNotification
+                {
+                    Text = "Failed to import presets. Ensure valid JSON is in clipboard.",
+                });
+                Logger.Error(ex, "Preset Import Failed");
+            }
+        }
+
+        // DTO for clean JSON export (avoids Realm internal fields)
+        private class PresetExportDto
+        {
+            public string Name { get; set; } = string.Empty;
+            public string RulesetShortName { get; set; } = string.Empty;
+            public List<APIMod> Mods { get; set; } = new List<APIMod>();
+        }
+
+        #endregion
 
             protected override void LoadComplete()
             {

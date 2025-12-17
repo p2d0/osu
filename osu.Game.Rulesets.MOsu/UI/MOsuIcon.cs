@@ -48,7 +48,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                     Anchor = Anchor.Centre,
                     Origin = Anchor.Centre,
                     Colour = Color4.Black,
-                    Text = "K",
+                    Text = "M",
                     Font = OsuFont.Default.With(size: 32) // Make sure font size fits
                 },
                 // 2. We attach the Logic Manager as a child.

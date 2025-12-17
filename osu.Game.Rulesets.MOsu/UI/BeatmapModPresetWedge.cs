@@ -11,6 +11,7 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Cursor;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.UserInterface;
+using osu.Framework.Platform;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.Drawables;
 using osu.Game.Database;
@@ -22,6 +23,7 @@ using osu.Game.Graphics.UserInterface;
 using osu.Game.Graphics.UserInterfaceV2;
 using osu.Game.Online.API;
 using osu.Game.Overlays;
+using osu.Game.Overlays.Notifications;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.MOsu.Database; // Ensure this matches your model namespace
 using osu.Game.Rulesets.UI;
@@ -159,7 +161,7 @@ namespace osu.Game.Rulesets.MOsu.UI
             Schedule(() => {
                 var hashStr = currentHash != "" ? $"BeatmapMD5Hash == {currentHash} AND" : "";
                 realmSubscription = realm.RegisterForNotifications(
-                    r => r.All<BeatmapModPreset>().Filter("BeatmapMD5Hash == $0 && Ruleset.ShortName == $1", currentHash, ruleset.Value.ShortName)// .Where(p => p.BeatmapMD5Hash == currentHash && p.Ruleset == ruleset.Value)
+                    r => r.All<BeatmapModPreset>().Filter("BeatmapMD5Hash == $0 && Ruleset.ShortName == $1", currentHash, ruleset.Value.ShortName)// .Where(p => p.BeatmapMD5Hash == currentHash && p.Ruleset == uleset.Value)
                     ,
                     (sender, changes) =>
                     {
@@ -205,192 +207,166 @@ namespace osu.Game.Rulesets.MOsu.UI
 
     public partial class BeatmapModPresetPanel : OsuClickableContainer, IHasContextMenu
     {
-    private readonly BeatmapModPreset preset;
-    private readonly BindableBool active = new BindableBool();
+        private readonly BeatmapModPreset preset;
+        private readonly BindableBool active = new BindableBool();
 
-    [Resolved]
-    private Bindable<IReadOnlyList<Mod>> selectedMods { get; set; } = null!;
+        [Resolved]
+        private Bindable<IReadOnlyList<Mod>> selectedMods { get; set; } = null!;
 
-    [Resolved]
-    private MOsuRealmAccess realm { get; set; } = null!;
+        [Resolved]
+        private MOsuRealmAccess realm { get; set; } = null!;
 
-    [Resolved]
-    private OverlayColourProvider colourProvider { get; set; } = null!;
+        [Resolved]
+        private OverlayColourProvider colourProvider { get; set; } = null!;
 
-    [Resolved]
-    private Bindable<RulesetInfo> ruleset { get; set; } = null!;
+        [Resolved]
+        private Bindable<RulesetInfo> ruleset { get; set; } = null!;
 
-    // 1. Add Dependency for calculating stars
-    [Resolved]
-    private BeatmapDifficultyCache difficultyCache { get; set; } = null!;
+        [Resolved]
+        private BeatmapDifficultyCache difficultyCache { get; set; } = null!;
 
-    // 2. Add Dependency for the current beatmap info
-    [Resolved]
-    private IBindable<WorkingBeatmap> beatmap { get; set; } = null!;
+        [Resolved]
+        private IBindable<WorkingBeatmap> beatmap { get; set; } = null!;
 
-    private Box background = null!;
-    private StarRatingDisplay starRatingDisplay = null!;
-    private CancellationTokenSource? cancellationTokenSource;
+        // --- NEW DEPENDENCIES FOR EXPORT ---
+        [Resolved]
+        private Clipboard clipboard { get; set; } = null!;
 
-    public BeatmapModPresetPanel(BeatmapModPreset preset)
-    {
-        this.preset = preset;
-    }
+        [Resolved]
+        private INotificationOverlay notifications { get; set; } = null!;
+        // -----------------------------------
 
-[BackgroundDependencyLoader]
-    private void load()
-    {
-        RelativeSizeAxes = Axes.X;
-        Height = 50;
-        CornerRadius = 5;
-        Masking = true;
+        private Box background = null!;
+        private StarRatingDisplay starRatingDisplay = null!;
+        private CancellationTokenSource? cancellationTokenSource;
 
-        var mods = preset.Mods.ToList();
-
-        Children = new Drawable[]
+        public BeatmapModPresetPanel(BeatmapModPreset preset)
         {
-            background = new Box
-            {
-                RelativeSizeAxes = Axes.Both,
-                Colour = colourProvider.Background4,
-            },
+            this.preset = preset;
+        }
 
-            new OsuSpriteText
-            {
-                Text = string.IsNullOrEmpty(preset.Name) ? "Untitled" : preset.Name,
-                Font = OsuFont.GetFont(weight: FontWeight.Bold, size: 20),
-                Padding = new MarginPadding { Left = 25 },
+        [BackgroundDependencyLoader]
+        private void load()
+        {
+            RelativeSizeAxes = Axes.X;
+            Height = 50;
+            CornerRadius = 5;
+            Masking = true;
 
-            // THIS IS THE FIX:
-            // Setting Anchor/Origin to Centre aligns it vertically relative
-            // to the other items in this horizontal flow.
-            Anchor = Anchor.CentreLeft,
-            Origin = Anchor.CentreLeft,
-            },
-new FillFlowContainer
+            var mods = preset.Mods.ToList();
+
+            Children = new Drawable[]
             {
-                AutoSizeAxes = Axes.Both,
-                Direction = FillDirection.Horizontal,
-                Anchor = Anchor.CentreRight,
-                Origin = Anchor.CentreRight,
-                // X=10 puts space between Name and Mods. Y is not used in a single row.
-                Spacing = new Vector2(20, 0),
-                Padding = new MarginPadding { Right = 5 },
-                Children = new Drawable[]
+                background = new Box
                 {
-                    // 1. The Preset Name
+                    RelativeSizeAxes = Axes.Both,
+                    Colour = colourProvider.Background4,
+                },
 
-                    // 2. The existing Stats and Mods
-                    new FillFlowContainer
+                new OsuSpriteText
+                {
+                    Text = string.IsNullOrEmpty(preset.Name) ? "Untitled" : preset.Name,
+                    Font = OsuFont.GetFont(weight: FontWeight.Bold, size: 20),
+                    Padding = new MarginPadding { Left = 25 },
+                    Anchor = Anchor.CentreLeft,
+                    Origin = Anchor.CentreLeft,
+                },
+                new FillFlowContainer
+                {
+                    AutoSizeAxes = Axes.Both,
+                    Direction = FillDirection.Horizontal,
+                    Anchor = Anchor.CentreRight,
+                    Origin = Anchor.CentreRight,
+                    Spacing = new Vector2(20, 0),
+                    Padding = new MarginPadding { Right = 5 },
+                    Children = new Drawable[]
                     {
-                        AutoSizeAxes = Axes.Both,
-                        Direction = FillDirection.Horizontal,
-                        Spacing = new Vector2(8),
-
-                        // Ensure this container is also vertically centered
-                        Anchor = Anchor.CentreRight,
-                        Origin = Anchor.CentreRight,
-
-                        Children = new Drawable[]
+                        new FillFlowContainer
                         {
-                            new FillFlowContainer
+                            AutoSizeAxes = Axes.Both,
+                            Direction = FillDirection.Horizontal,
+                            Spacing = new Vector2(8),
+                            Anchor = Anchor.CentreRight,
+                            Origin = Anchor.CentreRight,
+                            Children = new Drawable[]
                             {
-                                AutoSizeAxes = Axes.Both,
-                                Direction = FillDirection.Horizontal,
-                                Spacing = new Vector2(2),
-                                Anchor = Anchor.CentreLeft,
-                                Origin = Anchor.CentreLeft,
-                                ChildrenEnumerable = mods.Select(m => new ModIcon(m)
+                                new FillFlowContainer
                                 {
-                                    Scale = new Vector2(0.4f),
+                                    AutoSizeAxes = Axes.Both,
+                                    Direction = FillDirection.Horizontal,
+                                    Spacing = new Vector2(2),
                                     Anchor = Anchor.CentreLeft,
                                     Origin = Anchor.CentreLeft,
-                                })
-                            },
-                            starRatingDisplay = new StarRatingDisplay(default, size: StarRatingDisplaySize.Small)
-                            {
-                                Anchor = Anchor.CentreLeft,
-                                Origin = Anchor.CentreLeft,
-                                // Scale = new Vector2(0.7f),
-                            },
-                        }
-                    },
+                                    ChildrenEnumerable = mods.Select(m => new ModIcon(m)
+                                    {
+                                        Scale = new Vector2(0.4f),
+                                        Anchor = Anchor.CentreLeft,
+                                        Origin = Anchor.CentreLeft,
+                                    })
+                                },
+                                starRatingDisplay = new StarRatingDisplay(default, size: StarRatingDisplaySize.Small)
+                                {
+                                    Anchor = Anchor.CentreLeft,
+                                    Origin = Anchor.CentreLeft,
+                                },
+                            }
+                        },
+                    }
+                },
+                new HoverLayer()
+            };
 
-                }
-            },
-            new HoverLayer()
-        };
+            Action = toggleSelection;
+        }
 
-        Action = toggleSelection;
-    }
-
-    protected override void LoadComplete()
-    {
-        base.LoadComplete();
-
-        selectedMods.BindValueChanged(_ => updateActiveState(), true);
-        active.BindValueChanged(val =>
+        protected override void LoadComplete()
         {
-            background.FadeColour(val.NewValue ? colourProvider.Content2 : colourProvider.Background4, 200);
-        }, true);
+            base.LoadComplete();
 
-        cancellationTokenSource = new CancellationTokenSource();
-
-        // --- FIX START ---
-        // 1. Access properties on the UI thread.
-        var beatmapInfo = beatmap.Value.BeatmapInfo;
-        var presetRuleset = preset.Ruleset ?? ruleset.Value;
-
-        // 2. Detach them from Realm to create thread-safe unmanaged copies.
-        //    'Detach()' requires 'using osu.Game.Database;'
-        var safeBeatmapInfo = osu.Game.Database.RealmObjectExtensions.Detach(beatmapInfo);
-        var safeRulesetInfo = osu.Game.Rulesets.MOsu.Database.MOsuRealmExtensions.Detach(presetRuleset);
-
-        // 3. Materialize the mods list on the UI thread to ensure we don't access Realm lists in the background.
-        var safeMods = preset.Mods.ToList();
-        // --- FIX END ---
-
-        // Pass the safe, detached objects to the async method
-        difficultyCache.GetDifficultyAsync(safeBeatmapInfo, safeRulesetInfo, safeMods, cancellationTokenSource.Token)
-            .ContinueWith(task => Schedule(() =>
+            selectedMods.BindValueChanged(_ => updateActiveState(), true);
+            active.BindValueChanged(val =>
             {
-                // Handle potential cancellation or errors safely
-                if (task.IsCanceled) return;
+                background.FadeColour(val.NewValue ? colourProvider.Content2 : colourProvider.Background4, 200);
+            }, true);
 
-                var difficulty = task.GetResultSafely();
+            cancellationTokenSource = new CancellationTokenSource();
 
-                if (difficulty != null)
+            var beatmapInfo = beatmap.Value.BeatmapInfo;
+            var presetRuleset = preset.Ruleset ?? ruleset.Value;
+
+            var safeBeatmapInfo = osu.Game.Database.RealmObjectExtensions.Detach(beatmapInfo);
+            var safeRulesetInfo = osu.Game.Rulesets.MOsu.Database.MOsuRealmExtensions.Detach(presetRuleset);
+            var safeMods = preset.Mods.ToList();
+
+            difficultyCache.GetDifficultyAsync(safeBeatmapInfo, safeRulesetInfo, safeMods, cancellationTokenSource.Token)
+                .ContinueWith(task => Schedule(() =>
                 {
-                    starRatingDisplay.Current.Value = difficulty.Value;
-                }
-            }), cancellationTokenSource.Token);
-    }
-    protected override void Dispose(bool isDisposing)
-    {
-        base.Dispose(isDisposing);
-        cancellationTokenSource?.Cancel();
-    }
+                    if (task.IsCanceled) return;
+                    var difficulty = task.GetResultSafely();
+                    if (difficulty != null)
+                    {
+                        starRatingDisplay.Current.Value = difficulty.Value;
+                    }
+                }), cancellationTokenSource.Token);
+        }
+
+        protected override void Dispose(bool isDisposing)
+        {
+            base.Dispose(isDisposing);
+            cancellationTokenSource?.Cancel();
+        }
+
         private void toggleSelection()
         {
             if (active.Value)
             {
-                // If already active, deselect these mods
-                // We remove the preset's mods from the current selection
-                // Note: This relies on Mod equality.
                 var newMods = selectedMods.Value.Where(m => !preset.Mods.Any(pm => pm.Equals(m)));
                 selectedMods.Value = newMods.ToArray();
             }
             else
             {
-                // If inactive, activate these mods
-                // Logic: Keep System mods (unless incompatible), replace others with Preset mods.
-
                 var presetMods = preset.Mods;
-
-                // Filter currently selected system mods
                 var systemMods = selectedMods.Value.Where(mod => mod.Type == ModType.System);
-
-                // Check for incompatibility: If a system mod is incompatible with a preset mod, drop the system mod
                 var compatibleSystemMods = systemMods.Where(sm =>
                     !sm.IncompatibleMods.Any(t => presetMods.Any(pm => t.IsInstanceOfType(pm))));
 
@@ -400,24 +376,50 @@ new FillFlowContainer
 
         private void updateActiveState()
         {
-            // Check if the current selection matches the preset
-            // We ignore System mods in the comparison (e.g., if you have TouchDevice enabled, the preset for HR+DT is still "Active")
-
             var currentNonSystem = selectedMods.Value.Where(m => m.Type != ModType.System);
             var presetMods = preset.Mods;
-
             active.Value = new HashSet<Mod>(presetMods).SetEquals(currentNonSystem);
         }
 
         public MenuItem[] ContextMenuItems => new MenuItem[]
         {
+            new OsuMenuItem("Export Preset", MenuItemType.Standard, () =>
+            {
+                try
+                {
+                    // Create a list containing an anonymous object structure that matches
+                    // the PresetExportDto used in the Import function.
+                    // We export as a List so the existing Import logic (which expects a JSON array) works seamlessly.
+                    var exportData = new List<object>
+                    {
+                        new
+                        {
+                            Name = preset.Name,
+                            RulesetShortName = preset.Ruleset.ShortName,
+                            Mods = preset.Mods.Select(m => new APIMod(m)).ToList()
+                        }
+                    };
+
+                    string json = JsonConvert.SerializeObject(exportData, Formatting.Indented);
+                    clipboard.SetText(json);
+
+                    notifications.Post(new SimpleNotification
+                    {
+                        Text = $"Preset '{preset.Name}' copied to clipboard!"
+                    });
+                }
+                catch (System.Exception ex)
+                {
+                    notifications.Post(new SimpleErrorNotification
+                    {
+                        Text = $"Failed to export preset: {ex.Message}"
+                    });
+                }
+            }),
             new OsuMenuItem("Delete Preset", MenuItemType.Destructive, () =>
             {
-                // Delete from Realm
-                // We need to capture the ID or the object reference safely
                 realm.Write(r =>
                 {
-                    // Ensure the object is managed before deleting
                     if (preset.IsManaged)
                         r.Remove(preset);
                 });
