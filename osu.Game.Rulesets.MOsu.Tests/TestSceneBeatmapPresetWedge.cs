@@ -27,6 +27,9 @@ namespace osu.Game.Rulesets.MOsu.Tests
         protected MOsuRealmAccess MOsuRealm { get; set; } = null!;
         protected override bool UseFreshStoragePerRun => true;
 
+        [Resolved]
+        private BeatmapDifficultyCache difficultyCache { get; set; } = null!;
+
         [Cached]
         private readonly Bindable<IReadOnlyList<Mod>> selectedMods = new Bindable<IReadOnlyList<Mod>>(Array.Empty<Mod>());
 
@@ -45,6 +48,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
             Add(wedge = new BeatmapModPresetWedge
             {
                 Size = new Vector2(400, 400),
+                RelativeSizeAxes = Axes.None,
                 Anchor = Anchor.Centre,
                 Origin = Anchor.Centre,
                 State = { Value = Visibility.Visible }

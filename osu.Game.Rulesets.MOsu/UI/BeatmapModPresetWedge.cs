@@ -1,16 +1,18 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Newtonsoft.Json;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
-using osu.Framework.Extensions.ObjectExtensions;
+using osu.Framework.Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Cursor;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.UserInterface;
 using osu.Game.Beatmaps;
+using osu.Game.Beatmaps.Drawables;
 using osu.Game.Database;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
@@ -48,8 +50,10 @@ namespace osu.Game.Rulesets.MOsu.UI
 
         public BeatmapModPresetWedge()
         {
-            Width = 300f;
-            Height = 300f; // Adjusted height for visibility
+            RelativeSizeAxes = Axes.Both;
+            Padding = new MarginPadding { Bottom = 20, Left = 10, Right = 10 };
+            // Width = 300f;
+            // Height = 300f; // Adjusted height for visibility
         }
 
         [BackgroundDependencyLoader]
@@ -225,92 +229,154 @@ namespace osu.Game.Rulesets.MOsu.UI
 
     public partial class BeatmapModPresetPanel : OsuClickableContainer, IHasContextMenu
     {
-        private readonly BeatmapModPreset preset;
-        private readonly BindableBool active = new BindableBool();
+    private readonly BeatmapModPreset preset;
+    private readonly BindableBool active = new BindableBool();
 
-        [Resolved]
-        private Bindable<IReadOnlyList<Mod>> selectedMods { get; set; } = null!;
+    [Resolved]
+    private Bindable<IReadOnlyList<Mod>> selectedMods { get; set; } = null!;
 
-        [Resolved]
-        private MOsuRealmAccess realm { get; set; } = null!;
+    [Resolved]
+    private MOsuRealmAccess realm { get; set; } = null!;
 
-        [Resolved]
-        private OverlayColourProvider colourProvider { get; set; } = null!;
+    [Resolved]
+    private OverlayColourProvider colourProvider { get; set; } = null!;
 
-        private Box background = null!;
+    // 1. Add Dependency for calculating stars
+    [Resolved]
+    private BeatmapDifficultyCache difficultyCache { get; set; } = null!;
 
-        public BeatmapModPresetPanel(BeatmapModPreset preset)
+    // 2. Add Dependency for the current beatmap info
+    [Resolved]
+    private IBindable<WorkingBeatmap> beatmap { get; set; } = null!;
+
+    private Box background = null!;
+    private StarRatingDisplay starRatingDisplay = null!;
+    private CancellationTokenSource? cancellationTokenSource;
+
+    public BeatmapModPresetPanel(BeatmapModPreset preset)
+    {
+        this.preset = preset;
+    }
+
+    [BackgroundDependencyLoader]
+    private void load()
+    {
+        RelativeSizeAxes = Axes.X;
+        Height = 50;
+        CornerRadius = 5;
+        Masking = true;
+
+        var mods = preset.Mods.ToList();
+
+        Children = new Drawable[]
         {
-            this.preset = preset;
-        }
-
-        [BackgroundDependencyLoader]
-        private void load()
-        {
-            RelativeSizeAxes = Axes.X;
-            Height = 50;
-            CornerRadius = 5;
-            Masking = true;
-
-            // Safe access to mods list
-            var mods = preset.Mods.ToList();
-
-            Children = new Drawable[]
+            background = new Box
             {
-                background = new Box
+                RelativeSizeAxes = Axes.Both,
+                Colour = colourProvider.Background4,
+            },
+            new FillFlowContainer
+            {
+                RelativeSizeAxes = Axes.Both,
+                Padding = new MarginPadding { Horizontal = 10 },
+                Direction = FillDirection.Horizontal,
+                Spacing = new Vector2(10),
+                Children = new Drawable[]
                 {
-                    RelativeSizeAxes = Axes.Both,
-                    Colour = colourProvider.Background4,
-                },
-                new FillFlowContainer
-                {
-                    RelativeSizeAxes = Axes.Both,
-                    Padding = new MarginPadding { Horizontal = 10 },
-                    Direction = FillDirection.Horizontal,
-                    Spacing = new Vector2(10),
-                    Children = new Drawable[]
+                    new FillFlowContainer
                     {
-                        new FillFlowContainer
+                        AutoSizeAxes = Axes.Both,
+                        Direction = FillDirection.Vertical,
+                        Anchor = Anchor.CentreLeft,
+                        Origin = Anchor.CentreLeft,
+                        Children = new Drawable[]
                         {
-                            AutoSizeAxes = Axes.Both,
-                            Direction = FillDirection.Vertical,
-                            Anchor = Anchor.CentreLeft,
-                            Origin = Anchor.CentreLeft,
-                            Children = new Drawable[]
+                            new FillFlowContainer
                             {
-                                new FillFlowContainer
+                                AutoSizeAxes = Axes.Both,
+                                Direction = FillDirection.Horizontal,
+                                Spacing = new Vector2(8), // Spacing between Stars and Mods
+                                Children = new Drawable[]
                                 {
-                                    AutoSizeAxes = Axes.Both,
-                                    Direction = FillDirection.Horizontal,
-                                    Spacing = new Vector2(2),
-                                    ChildrenEnumerable = mods.Select(m => new ModIcon(m)
+                                    // 3. Add the Star Rating Display
+                                    starRatingDisplay = new StarRatingDisplay(default, size: StarRatingDisplaySize.Small)
                                     {
-                                        Scale = new Vector2(0.5f), // Smaller icons
-                                        // Size = new Vector2(100),   // Base size of ModIcon is usually large
-                                    })
+                                        Anchor = Anchor.CentreLeft,
+                                        Origin = Anchor.CentreLeft,
+                                        Scale = new Vector2(0.8f), // Adjust scale to fit 50px height comfortably
+                                    },
+                                    new FillFlowContainer
+                                    {
+                                        AutoSizeAxes = Axes.Both,
+                                        Direction = FillDirection.Horizontal,
+                                        Spacing = new Vector2(2),
+                                        Anchor = Anchor.CentreLeft,
+                                        Origin = Anchor.CentreLeft,
+                                        ChildrenEnumerable = mods.Select(m => new ModIcon(m)
+                                        {
+                                            Scale = new Vector2(0.5f),
+                                            Anchor = Anchor.CentreLeft,
+                                            Origin = Anchor.CentreLeft,
+                                        })
+                                    }
                                 }
                             }
                         }
                     }
-                },
-                new HoverLayer()
-            };
+                }
+            },
+            new HoverLayer()
+        };
 
-            Action = toggleSelection;
-        }
+        Action = toggleSelection;
+    }
 
-        protected override void LoadComplete()
+    protected override void LoadComplete()
+    {
+        base.LoadComplete();
+
+        selectedMods.BindValueChanged(_ => updateActiveState(), true);
+        active.BindValueChanged(val =>
         {
-            base.LoadComplete();
+            background.FadeColour(val.NewValue ? colourProvider.Content2 : colourProvider.Background4, 200);
+        }, true);
 
-            // Watch for external mod changes to update the "Active" visual state
-            selectedMods.BindValueChanged(_ => updateActiveState(), true);
-            active.BindValueChanged(val =>
+        cancellationTokenSource = new CancellationTokenSource();
+
+        // --- FIX START ---
+        // 1. Access properties on the UI thread.
+        var beatmapInfo = beatmap.Value.BeatmapInfo;
+        var presetRuleset = preset.Ruleset ?? beatmapInfo.Ruleset;
+
+        // 2. Detach them from Realm to create thread-safe unmanaged copies.
+        //    'Detach()' requires 'using osu.Game.Database;'
+        var safeBeatmapInfo = osu.Game.Database.RealmObjectExtensions.Detach(beatmapInfo);
+        var safeRulesetInfo = osu.Game.Rulesets.MOsu.Database.MOsuRealmExtensions.Detach(presetRuleset);
+
+        // 3. Materialize the mods list on the UI thread to ensure we don't access Realm lists in the background.
+        var safeMods = preset.Mods.ToList();
+        // --- FIX END ---
+
+        // Pass the safe, detached objects to the async method
+        difficultyCache.GetDifficultyAsync(safeBeatmapInfo, safeRulesetInfo, safeMods, cancellationTokenSource.Token)
+            .ContinueWith(task => Schedule(() =>
             {
-                background.FadeColour(val.NewValue ? colourProvider.Content2 : colourProvider.Background4, 200);
-            }, true);
-        }
+                // Handle potential cancellation or errors safely
+                if (task.IsCanceled) return;
 
+                var difficulty = task.GetResultSafely();
+
+                if (difficulty != null)
+                {
+                    starRatingDisplay.Current.Value = difficulty.Value;
+                }
+            }), cancellationTokenSource.Token);
+    }
+    protected override void Dispose(bool isDisposing)
+    {
+        base.Dispose(isDisposing);
+        cancellationTokenSource?.Cancel();
+    }
         private void toggleSelection()
         {
             if (active.Value)
