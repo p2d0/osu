@@ -151,6 +151,9 @@ namespace osu.Game.Rulesets.MOsu.UI
                     case Selection.Ranking:
                         configDetailTab.Value = mapLeaderboardScopeToDetailTab(scopeDropdown.Current.Value);
                         return;
+                    case Selection.Mods:
+                        // configDetailTab.Value = mapLeaderboardScopeToDetailTab(scopeDropdown.Current.Value);
+                        return;
 
                     default:
                         throw new ArgumentOutOfRangeException(nameof(tabControl.Current.Value), tabControl.Current.Value, null);

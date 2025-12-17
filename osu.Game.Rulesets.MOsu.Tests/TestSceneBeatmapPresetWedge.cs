@@ -11,7 +11,7 @@ using osu.Framework.Testing;
 using osu.Game.Beatmaps;
 using osu.Game.Overlays;
 using osu.Game.Rulesets.Mods;
-using osu.Game.Rulesets.MOsu.Database;
+using osu.Game.Rulesets.MOsu.Database; // Ensure this namespace matches your BeatmapModPreset location
 using osu.Game.Rulesets.MOsu.UI;
 using osu.Game.Rulesets.Osu;
 using osu.Game.Rulesets.Osu.Mods;
@@ -25,6 +25,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
     {
         private BeatmapModPresetWedge wedge = null!;
         protected MOsuRealmAccess MOsuRealm { get; set; } = null!;
+        protected override bool UseFreshStoragePerRun => true;
 
         [Cached]
         private readonly Bindable<IReadOnlyList<Mod>> selectedMods = new Bindable<IReadOnlyList<Mod>>(Array.Empty<Mod>());
@@ -32,7 +33,8 @@ namespace osu.Game.Rulesets.MOsu.Tests
         [BackgroundDependencyLoader]
         private void load(GameHost host)
         {
-            Dependencies.Cache(MOsuRealm = new MOsuRealmAccess(LocalStorage, "mosurealm", host.UpdateThread));
+            // Initialize a temporary in-memory Realm for testing
+            Dependencies.Cache(MOsuRealm = new MOsuRealmAccess(LocalStorage, "mosurealm-test", host.UpdateThread));
             Dependencies.Cache(new OverlayColourProvider(OverlayColourScheme.Green));
         }
 
@@ -42,9 +44,7 @@ namespace osu.Game.Rulesets.MOsu.Tests
 
             Add(wedge = new BeatmapModPresetWedge
             {
-                // FIX: Use relative Size (0.5 = 50% width/height)
-                // Do NOT set Height = 400 if RelativeSizeAxes is Both/Y
-                Size = new Vector2(400,400),
+                Size = new Vector2(400, 400),
                 Anchor = Anchor.Centre,
                 Origin = Anchor.Centre,
                 State = { Value = Visibility.Visible }
@@ -54,7 +54,9 @@ namespace osu.Game.Rulesets.MOsu.Tests
         [SetUp]
         public void SetUp()
         {
+            // Clean up database before each test
             MOsuRealm.Write(r => r.RemoveAll<BeatmapModPreset>());
+            // MOsuRealm.Write(r => r.RemoveAll<RulesetInfo>());
         }
 
         [Test]
@@ -66,21 +68,26 @@ namespace osu.Game.Rulesets.MOsu.Tests
             {
                 var working = CreateWorkingBeatmap(new OsuRuleset().RulesetInfo);
                 working.BeatmapInfo.MD5Hash = beatmapHash;
-                working.Beatmap.BeatmapInfo.MD5Hash = beatmapHash;
+                // Ensure the underlying Beatmap object also has the hash for consistency
+                if (working.Beatmap != null)
+                    working.Beatmap.BeatmapInfo.MD5Hash = beatmapHash;
 
                 MOsuRealm.Write(r =>
                 {
+                    // Note: When adding RulesetInfo to this custom Realm,
+                    // a copy of the RulesetInfo is created inside MOsuRealm.
+
                     r.Add(new BeatmapModPreset
                     {
                         BeatmapMD5Hash = beatmapHash,
-                        Ruleset = working.BeatmapInfo.Ruleset,
+                        Ruleset = r.Find<RulesetInfo>(working.BeatmapInfo.Ruleset.ShortName) ?? working.BeatmapInfo.Ruleset,
                         Mods = new Mod[] { new OsuModDoubleTime(), new OsuModHardRock() }
                     });
 
                     r.Add(new BeatmapModPreset
                     {
                         BeatmapMD5Hash = beatmapHash,
-                        Ruleset = working.BeatmapInfo.Ruleset,
+                        Ruleset = r.Find<RulesetInfo>(working.BeatmapInfo.Ruleset.ShortName) ?? working.BeatmapInfo.Ruleset,
                         Mods = new Mod[] { new OsuModHidden() }
                     });
                 });
@@ -88,8 +95,8 @@ namespace osu.Game.Rulesets.MOsu.Tests
                 Beatmap.Value = working;
             });
 
-            AddUntilStep("presets displayed", () => wedge.ChildrenOfType<ModPresetPanel>().Any());
-            AddAssert("2 presets loaded", () => wedge.ChildrenOfType<ModPresetPanel>().Count() == 2);
+            AddUntilStep("presets displayed", () => wedge.ChildrenOfType<BeatmapModPresetPanel>().Any());
+            AddAssert("2 presets loaded", () => wedge.ChildrenOfType<BeatmapModPresetPanel>().Count() == 2);
         }
 
         [Test]

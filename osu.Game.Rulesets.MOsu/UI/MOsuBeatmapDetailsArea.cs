@@ -73,7 +73,7 @@ namespace osu.Game.Rulesets.MOsu.UI {
             {
                 default:
                 case Header.Selection.Details:
-                    currentContent = new BeatmapMetadataWedge();
+                    currentContent = new BeatmapModPresetWedge();
                     break;
 
                 case Header.Selection.Ranking:

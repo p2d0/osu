@@ -10,6 +10,7 @@ using osu.Game.Graphics;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Online.API;
 using osu.Game.Overlays;
+using osu.Game.Rulesets.MOsu.Database;
 using osu.Game.Rulesets.MOsu.Extensions;
 using osu.Game.Rulesets.MOsu.UI.LocalUser;
 using osu.Game.Rulesets.MOsu.UI.Toolbar;
@@ -114,6 +115,12 @@ namespace osu.Game.Rulesets.MOsu.UI
             {
                 userManager = new LocalUserManager(ruleset, realm, api);
                 host.Dependencies.Cache(userManager);
+            }
+            var db = host.Dependencies.Get<MOsuRealmAccess>();
+            if (db == null)
+            {
+                db = new MOsuRealmAccess(host.Storage);
+                host.Dependencies.Cache(db);
             }
 
             // --- 2. Setup Overlay ---
