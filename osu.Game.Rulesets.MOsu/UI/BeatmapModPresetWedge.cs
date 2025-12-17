@@ -31,7 +31,7 @@ using osuTK;
 namespace osu.Game.Rulesets.MOsu.UI
 {
 
-public partial class BeatmapModPresetWedge : VisibilityContainer
+    public partial class BeatmapModPresetWedge : VisibilityContainer
     {
         [Resolved]
         private MOsuRealmAccess realm { get; set; } = null!;
@@ -39,76 +39,74 @@ public partial class BeatmapModPresetWedge : VisibilityContainer
         [Resolved]
         private IBindable<WorkingBeatmap> beatmap { get; set; } = null!;
 
-        private FillFlowContainer<BeatmapModPresetPanel> presetFlow = null!;
-        private IDisposable? realmSubscription;
-
         [Resolved]
         private Bindable<IReadOnlyList<Mod>> selectedMods { get; set; } = null!;
+
+        private FillFlowContainer<BeatmapModPresetPanel> presetFlow = null!;
+        private IDisposable? realmSubscription;
 
         protected override bool StartHidden => false;
 
         public BeatmapModPresetWedge()
         {
             RelativeSizeAxes = Axes.Both;
-            Padding = new MarginPadding { Bottom = 15, Left = 10, Right = 10 };
-            // Removed specific Padding/Width restrictions to let it fill the details area container
+            Padding = new MarginPadding { Bottom = 20, Left = 20};
         }
 
-            [BackgroundDependencyLoader]
-            private void load(OverlayColourProvider colourProvider)
+        [BackgroundDependencyLoader]
+        private void load(OverlayColourProvider colourProvider)
+        {
+            // 1. OsuContextMenuContainer handles the Right-Click menu logic
+            InternalChild = new OsuContextMenuContainer
             {
-                // 1. Wrap the content in OsuContextMenuContainer
-                InternalChild = new ShearAligningWrapper(new OsuContextMenuContainer
+                RelativeSizeAxes = Axes.Both,
+                Children = new Drawable[]
                 {
-                    RelativeSizeAxes = Axes.Both,
-                    Child = new Container
+                    // 2. The Background stays OUTSIDE the shear correction.
+                    // It inherits the parent's negative shear, giving it the "Wedge" shape.
+                    new WedgeBackground(),
+
+                    // 3. The Content gets sheared positively to appear straight to the user.
+                    new Container
                     {
                         RelativeSizeAxes = Axes.Both,
-                        CornerRadius = 10,
-                        Masking = true,
+                        Padding = new MarginPadding { Top = 15, Bottom = 15, Left = 20, Right = 10 }, // Adjusted Left padding for shear slant
+                        Shear = OsuGame.SHEAR,
                         Children = new Drawable[]
                         {
-                            new WedgeBackground(),
-                            new Container
+                            new FillFlowContainer
                             {
                                 RelativeSizeAxes = Axes.Both,
-                                Padding = new MarginPadding { Top = 15, Bottom = 15, Left = 10, Right = 10 },
+                                Direction = FillDirection.Vertical,
+                                Spacing = new Vector2(0, 10),
                                 Children = new Drawable[]
                                 {
-                                    new FillFlowContainer
+                                    new OsuSpriteText
+                                    {
+                                        Text = "Saved Mod Presets",
+                                        Font = OsuFont.GetFont(weight: FontWeight.Bold, size: 16),
+                                        Anchor = Anchor.TopCentre,
+                                        Origin = Anchor.TopCentre,
+                                    },
+                                    new OsuScrollContainer
                                     {
                                         RelativeSizeAxes = Axes.Both,
-                                        Direction = FillDirection.Vertical,
-                                        Spacing = new Vector2(0, 10),
-                                        Children = new Drawable[]
+                                        ScrollbarVisible = false,
+                                        Child = presetFlow = new FillFlowContainer<BeatmapModPresetPanel>
                                         {
-                                            new OsuSpriteText
-                                            {
-                                                Text = "Saved Mod Presets",
-                                                Font = OsuFont.GetFont(weight: FontWeight.Bold, size: 16),
-                                                Anchor = Anchor.TopCentre,
-                                                Origin = Anchor.TopCentre,
-                                            },
-                                            new OsuScrollContainer
-                                            {
-                                                RelativeSizeAxes = Axes.Both,
-                                                ScrollbarVisible = false,
-                                                Child = presetFlow = new FillFlowContainer<BeatmapModPresetPanel>
-                                                {
-                                                    RelativeSizeAxes = Axes.X,
-                                                    AutoSizeAxes = Axes.Y,
-                                                    Direction = FillDirection.Vertical,
-                                                    Spacing = new Vector2(0, 5),
-                                                }
-                                            }
+                                            RelativeSizeAxes = Axes.X,
+                                            AutoSizeAxes = Axes.Y,
+                                            Direction = FillDirection.Vertical,
+                                            Spacing = new Vector2(0, 5),
                                         }
                                     }
                                 }
                             }
                         }
                     }
-                });
-            }
+                }
+            };
+        }
 
         protected override void LoadComplete()
         {
@@ -137,7 +135,6 @@ public partial class BeatmapModPresetWedge : VisibilityContainer
                 });
             });
 
-            // Optional: Visual feedback (Flash the container)
             presetFlow.FlashColour(Colour4.White, 300);
         }
 
