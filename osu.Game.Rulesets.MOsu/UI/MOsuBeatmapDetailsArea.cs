@@ -45,10 +45,10 @@ namespace osu.Game.Rulesets.MOsu.UI {
             base.LoadComplete();
 
             header.Type.BindValueChanged(_ => updateDisplay(), true);
-            header.SaveCurrentModsAction = () =>
+            header.SaveCurrentModsAction = (name) =>
             {
                 if (currentContent is BeatmapModPresetWedge presetWedge)
-                    presetWedge.SaveCurrentMods();
+                    presetWedge.SaveCurrentMods(name);
             };
         }
 

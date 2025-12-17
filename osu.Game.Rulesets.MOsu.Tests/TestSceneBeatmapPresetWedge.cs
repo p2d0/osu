@@ -28,6 +28,9 @@ namespace osu.Game.Rulesets.MOsu.Tests
         protected override bool UseFreshStoragePerRun => true;
 
         [Resolved]
+        private Bindable<RulesetInfo> ruleset { get; set; } = null!;
+
+        [Resolved]
         private BeatmapDifficultyCache difficultyCache { get; set; } = null!;
 
         [Cached]
@@ -83,8 +86,9 @@ namespace osu.Game.Rulesets.MOsu.Tests
 
                     r.Add(new BeatmapModPreset
                     {
+                        Name = "KEKEKEKEK",
                         BeatmapMD5Hash = beatmapHash,
-                        Ruleset = r.Find<RulesetInfo>(working.BeatmapInfo.Ruleset.ShortName) ?? working.BeatmapInfo.Ruleset,
+                        Ruleset = r.Find<RulesetInfo>(ruleset.Value.ShortName) ?? ruleset.Value,
                         Mods = new Mod[] { new OsuModDoubleTime() {SpeedChange = {Value = 2.3f}}, new OsuModHidden() {
                                 OnlyFadeApproachCircles = { Value = true }
                             } }
@@ -92,8 +96,9 @@ namespace osu.Game.Rulesets.MOsu.Tests
 
                     r.Add(new BeatmapModPreset
                     {
+                        Name = "KEKEKEKEK",
                         BeatmapMD5Hash = beatmapHash,
-                        Ruleset = r.Find<RulesetInfo>(working.BeatmapInfo.Ruleset.ShortName) ?? working.BeatmapInfo.Ruleset,
+                        Ruleset = r.Find<RulesetInfo>(ruleset.Value.ShortName) ?? ruleset.Value,
                         Mods = new Mod[] { new OsuModHidden() }
                     });
                 });

@@ -6,8 +6,11 @@ using osu.Framework.Bindables;
 using osu.Framework.Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
+using osu.Framework.Graphics.Cursor;
+using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Localisation;
 using osu.Game.Configuration;
+using osu.Game.Graphics;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Graphics.UserInterfaceV2;
 using osu.Game.Localisation;
@@ -26,8 +29,8 @@ namespace osu.Game.Rulesets.MOsu.UI
             private WedgeSelector<Selection> tabControl = null!;
             private FillFlowContainer leaderboardControls = null!;
 
-            public Action? SaveCurrentModsAction;
-            private ShearedButton saveModsButton = null!;
+            public Action<string>? SaveCurrentModsAction;
+            private SavePresetButton saveModsButton = null!;
             private FillFlowContainer modPresetControls = null!; // New container for Save button
 
             private ShearedDropdown<BeatmapLeaderboardScope> scopeDropdown = null!;
@@ -121,15 +124,15 @@ namespace osu.Game.Rulesets.MOsu.UI
                                 Alpha = 0,
                                 Children = new Drawable[]
                                 {
-                                    saveModsButton = new ShearedButton(30f)
+                                    saveModsButton = new SavePresetButton(30f)
                                     {
                                         Anchor = Anchor.CentreRight,
                                         Origin = Anchor.CentreRight,
-                                        Text = "Save Presets",
+                                        Text = "Save Preset",
                                         Height = 30f,
                                         Margin = new MarginPadding { Left = -9.2f },
                                         Width = 100f,
-                                        Action = () => SaveCurrentModsAction?.Invoke()
+                                        SaveAction = (name) => SaveCurrentModsAction?.Invoke(name)
                                     }
                                 }
                             }
@@ -201,6 +204,72 @@ namespace osu.Game.Rulesets.MOsu.UI
                         throw new ArgumentOutOfRangeException(nameof(tabControl.Current.Value), tabControl.Current.Value, null);
                 }
             }
+            private partial class SavePresetButton : ShearedButton, IHasPopover
+                    {
+                        public Action<string>? SaveAction;
+
+                        public SavePresetButton(float width) : base(width)
+                        {
+                            // Trigger the popover when clicked
+                            Action = this.ShowPopover;
+                        }
+
+                        public Popover GetPopover() => new NameEntryPopover(SaveAction);
+                    }
+
+                    private partial class NameEntryPopover : OsuPopover
+                    {
+                        private readonly Action<string>? saveAction;
+                        private OsuTextBox nameTextBox = null!;
+
+                        public NameEntryPopover(Action<string>? saveAction)
+                        {
+                            this.saveAction = saveAction;
+                        }
+
+                        [BackgroundDependencyLoader]
+                        private void load(OsuColour colours)
+                        {
+                            Child = new FillFlowContainer
+                            {
+                                Width = 200,
+                                AutoSizeAxes = Axes.Y,
+                                Spacing = new Vector2(0, 10),
+                                Children = new Drawable[]
+                                {
+                                    nameTextBox = new OsuTextBox
+                                    {
+                                        RelativeSizeAxes = Axes.X,
+                                        PlaceholderText = "Preset Name (optional)",
+                                        TabbableContentContainer = this
+                                    },
+                                    new ShearedButton(200) // Full width button
+                                    {
+                                        Text = "Save",
+                                        Action = onSave
+                                    }
+                                }
+                            };
+                        }
+
+                        protected override void LoadComplete()
+                        {
+                            base.LoadComplete();
+                            Schedule(() => GetContainingFocusManager().ChangeFocus(nameTextBox));
+
+                            // Allow pressing Enter to save
+                            nameTextBox.OnCommit += (_, _) => onSave();
+                        }
+
+                        private void onSave()
+                        {
+                            // Use "Untitled" if empty, or allow empty if your logic prefers
+                            string name = string.IsNullOrWhiteSpace(nameTextBox.Text) ? "Untitled Preset" : nameTextBox.Text;
+
+                            saveAction?.Invoke(name);
+                            this.HidePopover();
+                        }
+                    }
 
             private static BeatmapLeaderboardScope? tryMapDetailTabToLeaderboardScope(BeatmapDetailTab tab)
             {

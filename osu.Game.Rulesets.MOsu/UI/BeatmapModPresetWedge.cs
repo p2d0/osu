@@ -27,6 +27,7 @@ using osu.Game.Rulesets.MOsu.Database; // Ensure this matches your model namespa
 using osu.Game.Rulesets.UI;
 using osu.Game.Screens.Select;
 using osuTK;
+using Realms;
 
 namespace osu.Game.Rulesets.MOsu.UI
 {
@@ -35,6 +36,9 @@ namespace osu.Game.Rulesets.MOsu.UI
     {
         [Resolved]
         private MOsuRealmAccess realm { get; set; } = null!;
+
+        [Resolved]
+        private Bindable<RulesetInfo> ruleset { get; set; } = null!;
 
         [Resolved]
         private IBindable<WorkingBeatmap> beatmap { get; set; } = null!;
@@ -114,16 +118,17 @@ namespace osu.Game.Rulesets.MOsu.UI
         {
             base.LoadComplete();
             beatmap.BindValueChanged(_ => updateSubscription(), true);
+            ruleset.BindValueChanged(_ => updateSubscription());
         }
 
-        public void SaveCurrentMods()
+        public void SaveCurrentMods(string name)
         {
             var modsToSave = selectedMods.Value.Where(m => m.Type != ModType.System).ToList();
 
             if (!modsToSave.Any()) return;
 
             string currentHash = beatmap.Value.BeatmapInfo.MD5Hash;
-            var ruleset = beatmap.Value.BeatmapInfo.Ruleset;
+            var ruleset = this.ruleset.Value;
 
             realm.Write(r =>
             {
@@ -133,7 +138,8 @@ namespace osu.Game.Rulesets.MOsu.UI
                 {
                     BeatmapMD5Hash = currentHash,
                     Ruleset = dbRuleset,
-                    Mods = modsToSave
+                    Mods = modsToSave,
+                    Name = name // <--- Save the name here
                 });
             });
 
@@ -151,8 +157,10 @@ namespace osu.Game.Rulesets.MOsu.UI
             string currentHash = beatmap.Value.BeatmapInfo.MD5Hash;
 
             Schedule(() => {
+                var hashStr = currentHash != "" ? $"BeatmapMD5Hash == {currentHash} AND" : "";
                 realmSubscription = realm.RegisterForNotifications(
-                    r => r.All<BeatmapModPreset>().Where(p => p.BeatmapMD5Hash == currentHash),
+                    r => r.All<BeatmapModPreset>().Filter("BeatmapMD5Hash == $0 && Ruleset.ShortName == $1", currentHash, ruleset.Value.ShortName)// .Where(p => p.BeatmapMD5Hash == currentHash && p.Ruleset == ruleset.Value)
+                    ,
                     (sender, changes) =>
                     {
                         if (changes == null)
@@ -209,6 +217,9 @@ namespace osu.Game.Rulesets.MOsu.UI
     [Resolved]
     private OverlayColourProvider colourProvider { get; set; } = null!;
 
+    [Resolved]
+    private Bindable<RulesetInfo> ruleset { get; set; } = null!;
+
     // 1. Add Dependency for calculating stars
     [Resolved]
     private BeatmapDifficultyCache difficultyCache { get; set; } = null!;
@@ -226,7 +237,7 @@ namespace osu.Game.Rulesets.MOsu.UI
         this.preset = preset;
     }
 
-    [BackgroundDependencyLoader]
+[BackgroundDependencyLoader]
     private void load()
     {
         RelativeSizeAxes = Axes.X;
@@ -243,54 +254,68 @@ namespace osu.Game.Rulesets.MOsu.UI
                 RelativeSizeAxes = Axes.Both,
                 Colour = colourProvider.Background4,
             },
-            new FillFlowContainer
+
+            new OsuSpriteText
             {
-                RelativeSizeAxes = Axes.Both,
-                Padding = new MarginPadding { Horizontal = 10 },
+                Text = string.IsNullOrEmpty(preset.Name) ? "Untitled" : preset.Name,
+                Font = OsuFont.GetFont(weight: FontWeight.Bold, size: 20),
+                Padding = new MarginPadding { Left = 25 },
+
+            // THIS IS THE FIX:
+            // Setting Anchor/Origin to Centre aligns it vertically relative
+            // to the other items in this horizontal flow.
+            Anchor = Anchor.CentreLeft,
+            Origin = Anchor.CentreLeft,
+            },
+new FillFlowContainer
+            {
+                AutoSizeAxes = Axes.Both,
                 Direction = FillDirection.Horizontal,
-                Spacing = new Vector2(10),
+                Anchor = Anchor.CentreRight,
+                Origin = Anchor.CentreRight,
+                // X=10 puts space between Name and Mods. Y is not used in a single row.
+                Spacing = new Vector2(20, 0),
+                Padding = new MarginPadding { Right = 5 },
                 Children = new Drawable[]
                 {
+                    // 1. The Preset Name
+
+                    // 2. The existing Stats and Mods
                     new FillFlowContainer
                     {
                         AutoSizeAxes = Axes.Both,
-                        Direction = FillDirection.Vertical,
+                        Direction = FillDirection.Horizontal,
+                        Spacing = new Vector2(8),
+
+                        // Ensure this container is also vertically centered
                         Anchor = Anchor.CentreRight,
                         Origin = Anchor.CentreRight,
+
                         Children = new Drawable[]
                         {
                             new FillFlowContainer
                             {
                                 AutoSizeAxes = Axes.Both,
                                 Direction = FillDirection.Horizontal,
-                                Spacing = new Vector2(8), // Spacing between Stars and Mods
-                                Children = new Drawable[]
+                                Spacing = new Vector2(2),
+                                Anchor = Anchor.CentreLeft,
+                                Origin = Anchor.CentreLeft,
+                                ChildrenEnumerable = mods.Select(m => new ModIcon(m)
                                 {
-                                    // 3. Add the Star Rating Display
-                                    new FillFlowContainer
-                                    {
-                                        AutoSizeAxes = Axes.Both,
-                                        Direction = FillDirection.Horizontal,
-                                        Spacing = new Vector2(2),
-                                        Anchor = Anchor.CentreLeft,
-                                        Origin = Anchor.CentreLeft,
-                                        ChildrenEnumerable = mods.Select(m => new ModIcon(m)
-                                        {
-                                            Scale = new Vector2(0.5f),
-                                            Anchor = Anchor.CentreLeft,
-                                            Origin = Anchor.CentreLeft,
-                                        })
-                                    },
-                                    starRatingDisplay = new StarRatingDisplay(default, size: StarRatingDisplaySize.Small)
-                                    {
-                                        Anchor = Anchor.CentreLeft,
-                                        Origin = Anchor.CentreLeft,
-                                        Scale = new Vector2(0.8f), // Adjust scale to fit 50px height comfortably
-                                    },
-                                }
-                            }
+                                    Scale = new Vector2(0.4f),
+                                    Anchor = Anchor.CentreLeft,
+                                    Origin = Anchor.CentreLeft,
+                                })
+                            },
+                            starRatingDisplay = new StarRatingDisplay(default, size: StarRatingDisplaySize.Small)
+                            {
+                                Anchor = Anchor.CentreLeft,
+                                Origin = Anchor.CentreLeft,
+                                // Scale = new Vector2(0.7f),
+                            },
                         }
-                    }
+                    },
+
                 }
             },
             new HoverLayer()
@@ -314,7 +339,7 @@ namespace osu.Game.Rulesets.MOsu.UI
         // --- FIX START ---
         // 1. Access properties on the UI thread.
         var beatmapInfo = beatmap.Value.BeatmapInfo;
-        var presetRuleset = preset.Ruleset ?? beatmapInfo.Ruleset;
+        var presetRuleset = preset.Ruleset ?? ruleset.Value;
 
         // 2. Detach them from Realm to create thread-safe unmanaged copies.
         //    'Detach()' requires 'using osu.Game.Database;'
