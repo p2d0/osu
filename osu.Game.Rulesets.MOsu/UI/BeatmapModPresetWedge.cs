@@ -16,6 +16,7 @@ using osu.Game.Beatmaps.Drawables;
 using osu.Game.Database;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
+using osu.Game.Graphics.Cursor;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Graphics.UserInterfaceV2;
@@ -29,7 +30,8 @@ using osuTK;
 
 namespace osu.Game.Rulesets.MOsu.UI
 {
-    public partial class BeatmapModPresetWedge : VisibilityContainer
+
+public partial class BeatmapModPresetWedge : VisibilityContainer
     {
         [Resolved]
         private MOsuRealmAccess realm { get; set; } = null!;
@@ -37,94 +39,106 @@ namespace osu.Game.Rulesets.MOsu.UI
         [Resolved]
         private IBindable<WorkingBeatmap> beatmap { get; set; } = null!;
 
-        [Resolved]
-        private Bindable<IReadOnlyList<Mod>> selectedMods { get; set; } = null!;
-
         private FillFlowContainer<BeatmapModPresetPanel> presetFlow = null!;
         private IDisposable? realmSubscription;
 
-        // Button to save current state
-        private Button saveButton = null!;
+        [Resolved]
+        private Bindable<IReadOnlyList<Mod>> selectedMods { get; set; } = null!;
 
         protected override bool StartHidden => false;
 
         public BeatmapModPresetWedge()
         {
             RelativeSizeAxes = Axes.Both;
-            Padding = new MarginPadding { Bottom = 20, Left = 10, Right = 10 };
-            // Width = 300f;
-            // Height = 300f; // Adjusted height for visibility
+            Padding = new MarginPadding { Bottom = 15, Left = 10, Right = 10 };
+            // Removed specific Padding/Width restrictions to let it fill the details area container
         }
 
-        [BackgroundDependencyLoader]
-        private void load(OverlayColourProvider colourProvider)
-        {
-            InternalChild = new ShearAligningWrapper(new Container
+            [BackgroundDependencyLoader]
+            private void load(OverlayColourProvider colourProvider)
             {
-                RelativeSizeAxes = Axes.Both,
-                CornerRadius = 10,
-                Masking = true,
-                Children = new Drawable[]
+                // 1. Wrap the content in OsuContextMenuContainer
+                InternalChild = new ShearAligningWrapper(new OsuContextMenuContainer
                 {
-                    new WedgeBackground(),
-                    new Container
+                    RelativeSizeAxes = Axes.Both,
+                    Child = new Container
                     {
                         RelativeSizeAxes = Axes.Both,
-                        Padding = new MarginPadding { Top = 20, Bottom = 20, Left = 10, Right = 10 },
+                        CornerRadius = 10,
+                        Masking = true,
                         Children = new Drawable[]
                         {
-                            new FillFlowContainer
+                            new WedgeBackground(),
+                            new Container
                             {
                                 RelativeSizeAxes = Axes.Both,
-                                Direction = FillDirection.Vertical,
-                                Spacing = new Vector2(0, 10),
+                                Padding = new MarginPadding { Top = 15, Bottom = 15, Left = 10, Right = 10 },
                                 Children = new Drawable[]
                                 {
-                                    new OsuSpriteText
-                                    {
-                                        Text = "Saved Mod Presets",
-                                        Font = OsuFont.GetFont(weight: FontWeight.Bold, size: 16),
-                                        Anchor = Anchor.TopCentre,
-                                        Origin = Anchor.TopCentre,
-                                    },
-                                    new OsuScrollContainer
+                                    new FillFlowContainer
                                     {
                                         RelativeSizeAxes = Axes.Both,
-                                        Height = 0.8f, // Leave room for the button
-                                        ScrollbarVisible = false,
-                                        Child = presetFlow = new FillFlowContainer<BeatmapModPresetPanel>
+                                        Direction = FillDirection.Vertical,
+                                        Spacing = new Vector2(0, 10),
+                                        Children = new Drawable[]
                                         {
-                                            RelativeSizeAxes = Axes.X,
-                                            // AutoSizeAxes = Axes.Y,
-                                            Direction = FillDirection.Vertical,
-                                            Spacing = new Vector2(0, 5),
+                                            new OsuSpriteText
+                                            {
+                                                Text = "Saved Mod Presets",
+                                                Font = OsuFont.GetFont(weight: FontWeight.Bold, size: 16),
+                                                Anchor = Anchor.TopCentre,
+                                                Origin = Anchor.TopCentre,
+                                            },
+                                            new OsuScrollContainer
+                                            {
+                                                RelativeSizeAxes = Axes.Both,
+                                                ScrollbarVisible = false,
+                                                Child = presetFlow = new FillFlowContainer<BeatmapModPresetPanel>
+                                                {
+                                                    RelativeSizeAxes = Axes.X,
+                                                    AutoSizeAxes = Axes.Y,
+                                                    Direction = FillDirection.Vertical,
+                                                    Spacing = new Vector2(0, 5),
+                                                }
+                                            }
                                         }
-                                    },
-                                    saveButton = new RoundedButton
-                                    {
-                                        RelativeSizeAxes = Axes.X,
-                                        Height = 40,
-                                        Text = "Save Current Mods",
-                                        Action = saveCurrentMods
                                     }
                                 }
                             }
                         }
                     }
-                }
-            });
-        }
+                });
+            }
 
         protected override void LoadComplete()
         {
             base.LoadComplete();
             beatmap.BindValueChanged(_ => updateSubscription(), true);
+        }
 
-            // Enable/Disable button based on if mods are selected
-            selectedMods.BindValueChanged(mods =>
+        public void SaveCurrentMods()
+        {
+            var modsToSave = selectedMods.Value.Where(m => m.Type != ModType.System).ToList();
+
+            if (!modsToSave.Any()) return;
+
+            string currentHash = beatmap.Value.BeatmapInfo.MD5Hash;
+            var ruleset = beatmap.Value.BeatmapInfo.Ruleset;
+
+            realm.Write(r =>
             {
-                saveButton.Enabled.Value = mods.NewValue.Any(m => m.Type != ModType.System);
-            }, true);
+                var dbRuleset = r.Find<RulesetInfo>(ruleset.ShortName) ?? ruleset;
+
+                r.Add(new BeatmapModPreset
+                {
+                    BeatmapMD5Hash = currentHash,
+                    Ruleset = dbRuleset,
+                    Mods = modsToSave
+                });
+            });
+
+            // Optional: Visual feedback (Flash the container)
+            presetFlow.FlashColour(Colour4.White, 300);
         }
 
         private void updateSubscription()
@@ -137,9 +151,6 @@ namespace osu.Game.Rulesets.MOsu.UI
 
             string currentHash = beatmap.Value.BeatmapInfo.MD5Hash;
 
-            // Subscribe to live updates from Realm
-            // var presets = realm.Realm.All<BeatmapModPreset>()
-            //     .Where(p => p.BeatmapMD5Hash == currentHash);
             Schedule(() => {
                 realmSubscription = realm.RegisterForNotifications(
                     r => r.All<BeatmapModPreset>().Where(p => p.BeatmapMD5Hash == currentHash),
@@ -147,31 +158,23 @@ namespace osu.Game.Rulesets.MOsu.UI
                     {
                         if (changes == null)
                         {
-                            // Initial population
-                            foreach (var p in sender)
-                                addPanel(p);
+                            foreach (var p in sender) addPanel(p);
                             return;
                         }
 
-                        // Handle deletions (reverse order to preserve indices)
                         foreach (var i in changes.DeletedIndices.OrderByDescending(i => i))
                         {
-                            if (i < presetFlow.Count)
-                                presetFlow.Remove(presetFlow.Children[i], true);
+                            if (i < presetFlow.Count) presetFlow.Remove(presetFlow.Children[i], true);
                         }
 
-                        // Handle insertions
                         foreach (var i in changes.InsertedIndices)
                         {
-                            if (i <= presetFlow.Count)
-                                addPanel(sender[i]);
+                            if (i <= presetFlow.Count) addPanel(sender[i]);
                         }
 
-                        // Handle modifications (flash to indicate change)
                         foreach (var i in changes.ModifiedIndices)
                         {
-                            if (i < presetFlow.Count)
-                                presetFlow.Children[i].FlashColour(Colour4.White, 500);
+                            if (i < presetFlow.Count) presetFlow.Children[i].FlashColour(Colour4.White, 500);
                         }
                     }
                 );
@@ -180,41 +183,7 @@ namespace osu.Game.Rulesets.MOsu.UI
 
         private void addPanel(BeatmapModPreset preset)
         {
-            // Realm objects must be accessed on the thread they were created (Update thread usually),
-            // or valid only within the subscription block.
-            // Since UI updates happen on Update thread, this is generally safe,
-            // but creating a detached copy or passing the ID is sometimes safer depending on architecture.
-            // Here we pass the object directly as is common in Osu Game Logic.
-
             presetFlow.Add(new BeatmapModPresetPanel(preset));
-        }
-
-        private void saveCurrentMods()
-        {
-            var modsToSave = selectedMods.Value.Where(m => m.Type != ModType.System).ToList();
-
-            if (!modsToSave.Any()) return;
-
-            string currentHash = beatmap.Value.BeatmapInfo.MD5Hash;
-            var ruleset = beatmap.Value.BeatmapInfo.Ruleset;
-
-            // Generate a simple name based on Acronyms
-            string name = string.Join(" + ", modsToSave.Select(m => m.Acronym));
-
-            realm.Write(r =>
-            {
-                // Ensure we have a managed version of the ruleset info
-                var dbRuleset = r.Find<RulesetInfo>(ruleset.ShortName) ?? ruleset;
-
-                r.Add(new BeatmapModPreset
-                {
-                    BeatmapMD5Hash = currentHash,
-                    // Name = name,
-                    // Description = $"{modsToSave.Count} mods",
-                    Ruleset = dbRuleset,
-                    Mods = modsToSave
-                });
-            });
         }
 
         protected override void PopIn() => this.FadeIn(300, Easing.OutQuint).MoveToX(0, 300, Easing.OutQuint);

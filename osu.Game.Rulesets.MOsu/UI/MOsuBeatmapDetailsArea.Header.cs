@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Extensions;
@@ -9,6 +11,7 @@ using osu.Game.Configuration;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Graphics.UserInterfaceV2;
 using osu.Game.Localisation;
+using osu.Game.Rulesets.Mods;
 using osu.Game.Screens.Select;
 using osu.Game.Screens.Select.Leaderboards;
 using osuTK;
@@ -23,9 +26,16 @@ namespace osu.Game.Rulesets.MOsu.UI
             private WedgeSelector<Selection> tabControl = null!;
             private FillFlowContainer leaderboardControls = null!;
 
+            public Action? SaveCurrentModsAction;
+            private ShearedButton saveModsButton = null!;
+            private FillFlowContainer modPresetControls = null!; // New container for Save button
+
             private ShearedDropdown<BeatmapLeaderboardScope> scopeDropdown = null!;
             private ShearedDropdown<LeaderboardSortMode> sortDropdown = null!;
             private ShearedToggleButton selectedModsToggle = null!;
+
+            [Resolved]
+            private Bindable<IReadOnlyList<Mod>> selectedMods { get; set; } = null!;
 
             public IBindable<Selection> Type => tabControl.Current;
 
@@ -59,6 +69,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                                 Margin = new MarginPadding { Top = 2f },
                                 IsSwitchable = true,
                             },
+                            // 1. Leaderboard Controls (Ranking Tab)
                             leaderboardControls = new FillFlowContainer
                             {
                                 Anchor = Anchor.CentreRight,
@@ -76,7 +87,6 @@ namespace osu.Game.Rulesets.MOsu.UI
                                         Origin = Anchor.CentreRight,
                                         Text = UserInterfaceStrings.SelectedMods,
                                         Height = 30f,
-                                        // Eyeballed to make spacing match. Because shear is silly and implemented in different ways between dropdown and button.
                                         Margin = new MarginPadding { Left = -9.2f },
                                     },
                                     sortDropdown = new ShearedDropdown<LeaderboardSortMode>(BeatmapLeaderboardWedgeStrings.Sort)
@@ -95,8 +105,34 @@ namespace osu.Game.Rulesets.MOsu.UI
                                         Width = 0.4f,
                                         Current = { Value = BeatmapLeaderboardScope.Global },
                                     },
+                                    // REMOVED modPresetControls from here
                                 },
                             },
+                            // 2. Mod Preset Controls (Mods Tab) - MOVED HERE
+                            modPresetControls = new FillFlowContainer
+                            {
+                                Anchor = Anchor.CentreRight,
+                                Origin = Anchor.CentreRight,
+                                RelativeSizeAxes = Axes.X, // Changed to X to match layout
+                                Height = 30,
+                                Spacing = new Vector2(5f, 0f),
+                                Direction = FillDirection.Horizontal,
+                                Padding = new MarginPadding { Left = 258 }, // Added padding to avoid overlapping the tabs
+                                Alpha = 0,
+                                Children = new Drawable[]
+                                {
+                                    saveModsButton = new ShearedButton(30f)
+                                    {
+                                        Anchor = Anchor.CentreRight,
+                                        Origin = Anchor.CentreRight,
+                                        Text = "Save Presets",
+                                        Height = 30f,
+                                        Margin = new MarginPadding { Left = -9.2f },
+                                        Width = 100f,
+                                        Action = () => SaveCurrentModsAction?.Invoke()
+                                    }
+                                }
+                            }
                         },
                     },
                 };
@@ -116,6 +152,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                 tabControl.Current.Value = configDetailTab.Value == BeatmapDetailTab.Details ? Selection.Details : Selection.Ranking;
                 tabControl.Current.BindValueChanged(v =>
                 {
+                    modPresetControls.FadeTo(v.NewValue == Selection.Mods ? 1 : 0, 300, Easing.OutQuint);
                     leaderboardControls.FadeTo(v.NewValue == Selection.Ranking ? 1 : 0, 300, Easing.OutQuint);
                     updateConfigDetailTab();
                 }, true);
@@ -135,6 +172,11 @@ namespace osu.Game.Rulesets.MOsu.UI
                         sortDropdown.Current.Value = LeaderboardSortMode.Score;
                         sortDropdown.Current.Disabled = true;
                     }
+                }, true);
+
+                selectedMods.BindValueChanged(mods =>
+                {
+                    saveModsButton.Enabled.Value = mods.NewValue.Any(m => m.Type != ModType.System);
                 }, true);
             }
 
