@@ -245,5 +245,6 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser
                 AddInternal(scroll.Button.CreateProxy());
             }
         }
+        public bool IsDisposedPublic => IsDisposed;
     }
 }

@@ -8,7 +8,6 @@ using osu.Framework.Extensions;
 using osu.Framework.Extensions.LocalisationExtensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
-using osu.Framework.Graphics.Sprites;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Localisation;
 using osu.Game.Beatmaps;
@@ -49,7 +48,6 @@ using osuTK;
 using osu.Framework.Platform;
 using osu.Framework.Allocation;
 using osu.Game.Online.API;
-using osu.Game.Online;
 using osu.Game.Database;
 using osu.Game.Rulesets.MOsu.UI.Toolbar;
 using osu.Game.Rulesets.MOsu.UI.LocalUser;
@@ -57,6 +55,7 @@ using osu.Framework.Graphics.Shapes;
 using osuTK.Graphics;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Rulesets.MOsu.Extensions;
+using osu.Game.Screens.SelectV2;
 
 namespace osu.Game.Rulesets.MOsu
 {
@@ -253,96 +252,109 @@ namespace osu.Game.Rulesets.MOsu
 
 
         // }
-        public override Drawable CreateIcon() => new Icon(this);
+        // public override Drawable CreateIcon() => new Icon(this);
+        public override Drawable CreateIcon() => new MOsuIcon(this);
 
-        private partial class Icon : CompositeDrawable
-        {
-            private readonly OsuRuleset ruleset;
-            private ToolbarLocalUserButton? localUserButton;
-            private LocalUserManager localUserManager;
-            private LocalUserProfileOverlay overlay;
+        // private partial class Icon : CompositeDrawable
+        // {
+        //     private readonly OsuRuleset ruleset;
+        //     private ToolbarLocalUserButton? localUserButton;
+        //     private LocalUserManager localUserManager;
+        //     private LocalUserProfileOverlay overlay;
+        //     private BeatmapModsSelect beatmapModsSelect;
 
-            protected override void LoadComplete()
-            {
-                base.LoadComplete();
-            }
+        //     protected override void LoadComplete()
+        //     {
+        //         base.LoadComplete();
+        //     }
 
-            [BackgroundDependencyLoader]
-            private void load(GameHost host,RealmAccess realm,IAPIProvider api, OsuGame game)
-            {
+        //     [BackgroundDependencyLoader]
+        //     private void load(GameHost host,RealmAccess realm,IAPIProvider api, OsuGame game)
+        //     {
 
-                // NOTE doesn't feel right
-                Scheduler.AddDelayed(() => {
-                    if(host.Dependencies.Get<LocalUserManager>() == null)
-                        host.Dependencies.Cache(localUserManager = new LocalUserManager(ruleset, realm, api));
+        //         // NOTE doesn't feel right
+        //         Scheduler.AddDelayed(() => {
+        //             if(host.Dependencies.Get<LocalUserManager>() == null)
+        //                 host.Dependencies.Cache(localUserManager = new LocalUserManager(ruleset, realm, api));
 
-                    if(overlay == null){
-                        var container = game.GetWaveOverlayPlacementContainer();
+        //             if(overlay == null){
+        //                 var container = game.GetWaveOverlayPlacementContainer();
 
-                        if (container != null)
-                        {
-                            var overlay = container.Children.OfType<LocalUserProfileOverlay>().FirstOrDefault();
+        //                 if (container != null)
+        //                 {
+        //                     var overlay = container.Children.OfType<LocalUserProfileOverlay>().FirstOrDefault();
 
-                            if(overlay == null){
-                                overlay = new LocalUserProfileOverlay();
-                                // Schedule(() => {
-                                container.Add(overlay);
-                                // overlay.Show();
-                                if(host.Dependencies.Get<LocalUserProfileOverlay>() == null){
-                                    host.Dependencies.Cache(overlay);
-                                }
-                                // });
-                            }
-                        }
-                    } else if(host.Dependencies.Get<LocalUserProfileOverlay>() != null) {
-                        overlay = host.Dependencies.Get<LocalUserProfileOverlay>();
-                        // overlay.Show();
-                    };
+        //                     if(overlay == null){
+        //                         overlay = new LocalUserProfileOverlay();
+        //                         // Schedule(() => {
+        //                         container.Add(overlay);
+        //                         // overlay.Show();
+        //                         if(host.Dependencies.Get<LocalUserProfileOverlay>() == null){
+        //                             host.Dependencies.Cache(overlay);
+        //                         }
+        //                         // });
+        //                     }
+        //                 }
+        //             } else if(host.Dependencies.Get<LocalUserProfileOverlay>() != null) {
+        //                 overlay = host.Dependencies.Get<LocalUserProfileOverlay>();
+        //                 // overlay.Show();
+        //             };
 
-                    var toolbarContainer = game.GetToolbarContainer();
-                    if(toolbarContainer != null && localUserButton == null && !toolbarContainer.Children.OfType<ToolbarLocalUserButton>().Any()){
-                        localUserButton = new ToolbarLocalUserButton();
-                        if(toolbarContainer != null)
-                            // Schedule(() => {
-                                toolbarContainer.Add(localUserButton);
-                            // });
-                    }
+        //             var toolbarContainer = game.GetToolbarContainer();
+        //             if(toolbarContainer != null && localUserButton == null && !toolbarContainer.Children.OfType<ToolbarLocalUserButton>().Any()){
+        //                 localUserButton = new ToolbarLocalUserButton();
+        //                 if(toolbarContainer != null)
+        //                     // Schedule(() => {
+        //                         toolbarContainer.Add(localUserButton);
+        //                     // });
+        //             }
+        //             // songSelect.ManageCollections();
+        //             // songSelect.MoveToX(0,150,Easing.In);
+        //             // beatmapModsSelect = new BeatmapModsSelect(songSelect);
+        //             // ;
+        //             // host.UpdateThread
+        //             // host.Dependencies.Inject(beatmapModsSelect = new BeatmapModsSelect());
 
-                }, 1000, false);
+        //             // if(host.Dependencies.Get<Beatmap>() == null)
+        //             //     host.Dependencies.Cache(localUserManager = new LocalUserManager(ruleset, realm, api));
 
 
-                // LocalUserProfileOverlay localUserProfileOverlay;
-                // host.Dependencies.loadComponentSingleFile(userProfile = new UserProfileOverlay(), overlayContent.Add, true);
-                Schedule(() => {
-                    InternalChildren = new Drawable[]
-                    {
-                        new Circle
-                        {
-                            Size = new Vector2(32),
-                            Colour = Color4.White,
-                        },
-                        new OsuSpriteText
-                        {
-                            Anchor = Anchor.Centre,
-                            Origin = Anchor.Centre,
-                            Colour = Color4.Black,
-                            Text = "M".ToString(),
-                            Font = OsuFont.Default.With(size: 32)
-                        }
-                    };});
 
-            }
+        //         }, 1000, false);
 
-            public Icon(OsuRuleset ruleset)
-            {
-                Anchor = Anchor.Centre;
-                Origin = Anchor.Centre;
 
-                // Set a fixed size to make Song Select V2 happy
-                Size = new Vector2(32);
-                this.ruleset = ruleset;
-            }
-        }
+        //         // LocalUserProfileOverlay localUserProfileOverlay;
+        //         // host.Dependencies.loadComponentSingleFile(userProfile = new UserProfileOverlay(), overlayContent.Add, true);
+        //         Schedule(() => {
+        //             InternalChildren = new Drawable[]
+        //             {
+        //                 new Circle
+        //                 {
+        //                     Size = new Vector2(32),
+        //                     Colour = Color4.White,
+        //                 },
+        //                 new OsuSpriteText
+        //                 {
+        //                     Anchor = Anchor.Centre,
+        //                     Origin = Anchor.Centre,
+        //                     Colour = Color4.Black,
+        //                     Text = "M".ToString(),
+        //                     Font = OsuFont.Default.With(size: 32)
+        //                 }
+        //             };});
+
+        //     }
+
+        //     public Icon(OsuRuleset ruleset)
+        //     {
+        //         Anchor = Anchor.Centre;
+        //         Origin = Anchor.Centre;
+
+        //         // Set a fixed size to make Song Select V2 happy
+        //         Size = new Vector2(32);
+        //         this.ruleset = ruleset;
+        //     }
+        // }
 
         public override DifficultyCalculator CreateDifficultyCalculator(IWorkingBeatmap beatmap) => new OsuDifficultyCalculator(RulesetInfo, beatmap);
 
