@@ -160,12 +160,18 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
                                         },
                                     },
                                 },
-                                textBar = new ChatTextBar
+                                // Wrap ChatTextBar in OsuContextMenuContainer to enable right-click context menu
+                                new OsuContextMenuContainer
                                 {
                                     RelativeSizeAxes = Axes.X,
+                                    AutoSizeAxes = Axes.Y,
                                     Anchor = Anchor.BottomRight,
                                     Origin = Anchor.BottomRight,
-                                    Padding = new MarginPadding { Left = side_bar_width },
+                                    Child = textBar = new ChatTextBar
+                                    {
+                                        RelativeSizeAxes = Axes.X,
+                                        Padding = new MarginPadding { Left = side_bar_width },
+                                    }
                                 },
                             }
                         }
