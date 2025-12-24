@@ -12,6 +12,7 @@ using osu.Game.Online.API;
 using osu.Game.Overlays;
 using osu.Game.Rulesets.MOsu.Database;
 using osu.Game.Rulesets.MOsu.Extensions;
+using osu.Game.Rulesets.MOsu.UI.Chat;
 using osu.Game.Rulesets.MOsu.UI.LocalUser;
 using osu.Game.Rulesets.MOsu.UI.Toolbar;
 using osuTK;
@@ -54,7 +55,8 @@ namespace osu.Game.Rulesets.MOsu.UI
                 // 2. We attach the Logic Manager as a child.
                 // It will run its lifecycle without cluttering the Icon code.
                 new MOsuSystemManager(ruleset),
-                new BeatmapModsSelectInjector()
+                new BeatmapModsSelectInjector(),
+                new ChatOverlayInjector()
             };
         }
     }
