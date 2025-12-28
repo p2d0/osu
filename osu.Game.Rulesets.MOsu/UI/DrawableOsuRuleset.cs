@@ -32,6 +32,7 @@ using osu.Framework.Threading;
 using System.Reflection;
 using System.Threading.Tasks;
 using osu.Game.Database;
+using osu.Game.Rulesets.Scoring;
 
 namespace osu.Game.Rulesets.MOsu.UI
 {
@@ -48,6 +49,7 @@ namespace osu.Game.Rulesets.MOsu.UI
         public DrawableOsuRuleset(Ruleset ruleset, IBeatmap beatmap, IReadOnlyList<Mod>? mods = null)
             : base(ruleset, beatmap, mods)
         {
+            this.playableBeatmap = beatmap;
         }
 
         [Resolved]
@@ -100,7 +102,7 @@ namespace osu.Game.Rulesets.MOsu.UI
         // }
 
         private ScheduledDelegate? frameStablePlaybackResetDelegate;
-
+        private IBeatmap playableBeatmap;
         private static readonly PropertyInfo frameStablePlaybackProperty =
             typeof(DrawableRuleset).GetProperty("FrameStablePlayback", BindingFlags.Instance | BindingFlags.NonPublic);
 
@@ -129,7 +131,7 @@ namespace osu.Game.Rulesets.MOsu.UI
 
 
         [BackgroundDependencyLoader]
-        private void load(ReplayPlayer? replayPlayer, Player? player,RealmAccess realm, LocalUserManager localUserManager)
+        private void load(ReplayPlayer? replayPlayer, Player? player, RealmAccess realm, LocalUserManager localUserManager)
         {
             if (replayPlayer != null)
             {
@@ -145,6 +147,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                 cursorHideEnabled.BindValueChanged(enabled => Playfield.Cursor.FadeTo(enabled.NewValue ? 0 : 1), true);
             }
 
+            // beatmap.Value.Beatmap.Br
             if (GameplayClockContainer != null && frameStablePlaybackProperty != null)
             {
                 SkipOverlay skipOverlay;
@@ -174,6 +177,11 @@ namespace osu.Game.Rulesets.MOsu.UI
                     );
                     await localUserManager.UpdateUserStatisticsAsync(Ruleset.RulesetInfo).ConfigureAwait(false);
                 };
+                BreakTracker breakTracker = (BreakTracker)FrameStableComponents.First(p => p is BreakTracker);
+                breakTracker.Breaks = playableBeatmap.Breaks;
+                // player.OnLoadComplete += (player) => {
+                //     breakTracker.Breaks = beatmap.Value.Beatmap.Breaks;
+                // };
             }
 
         }
