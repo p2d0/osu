@@ -29,19 +29,10 @@ using osu.Game.Localisation;
 using osuTK;
 using osu.Game.Graphics.UserInterfaceV2;
 using osu.Game.Graphics.Sprites;
-using System.Linq;
 using System.Linq.Expressions;
 using Realms;
 using osu.Game.Screens; // Required for IPerformFromScreenRunner
-using System.Linq;
 using System.Threading.Tasks;
-using osu.Framework.Allocation;
-using osu.Framework.Graphics;
-using osu.Framework.Localisation;
-using osu.Framework.Platform;
-using osu.Framework.Screens;
-using osu.Game.Localisation;
-using osu.Game.Screens;
 using osu.Game.Screens.Import;
 using osu.Game.Screens.Utility;
 using osu.Game.Rulesets.MOsu.UI.LocalUser;
@@ -50,6 +41,17 @@ using osu.Framework.Testing;
 using osu.Game.Rulesets.MOsu.Extensions;
 using osu.Game.Rulesets.MOsu.UI.Toolbar;
 using osu.Game.Collections;
+using osu.Game.Scoring;
+using osu.Game.Beatmaps;
+using osu.Game.Rulesets.Scoring;
+using osu.Framework.Allocation;
+using osu.Framework.Graphics;
+using osu.Framework.Localisation;
+using osu.Framework.Platform;
+using osu.Framework.Screens;
+using osu.Game.Localisation;
+using osu.Game.Screens;
+using osu.Game.Models;
 
 namespace osu.Game.Rulesets.MOsu.UI
 {
@@ -70,6 +72,8 @@ namespace osu.Game.Rulesets.MOsu.UI
 
         [Resolved(CanBeNull = true)]
         private IPerformFromScreenRunner? performer { get; set; }
+
+        private readonly Bindable<bool> exportWithScores = new Bindable<bool>(false);
 
         public OsuSettingsSubsection(Ruleset ruleset)
             : base(ruleset)
@@ -142,112 +146,236 @@ namespace osu.Game.Rulesets.MOsu.UI
                     Margin = new MarginPadding { Top = 20, Bottom = 5 },
                     Font = OsuFont.GetFont(weight: FontWeight.Bold)
                 },
+                new SettingsCheckbox
+                {
+                    LabelText = "Include local scores in export",
+                    Current = exportWithScores,
+                    TooltipText = "If checked, exporting collections will also include local scores for the beatmaps in those collections."
+                },
                 new SettingsButton
                 {
                     Text = "Export collections to file",
-                    TooltipText = "Saves all collections to exports/collections.json",
+                    TooltipText = "Saves all collections (and optionally scores) to exports/collections.json",
                     Action = exportCollections
                 },
                 new SettingsButton
                 {
                     Text = "Import collections from file",
-                    TooltipText = "Open file browser to select a collection .json",
+                    TooltipText = "Open file browser to select a collection .json (Standard format)",
                     Action = () =>
                     {
                         performer?.PerformFromScreen(screen => screen.Push(new CollectionImportScreen()));
                     }
-                }
+                },
+                new ImportCollectionScoresButton(),
             };
         }
 
         private void exportPresets()
         {
-            try
+            var notification = new ProgressNotification
             {
-                // FIX: Use .Filter() string query to handle relationships (Ruleset.ShortName)
-                // and persisted properties directly without LINQ translation issues.
-                var presets = realm.Run(r => r.All<ModPreset>()
-                    .Filter("Ruleset.ShortName == $0 && DeletePending == false", "mosususu")
-                    .ToList());
+                State = ProgressNotificationState.Active,
+                Text = "Exporting presets...",
+                CompletionText = "Presets exported!",
+            };
+            notifications.Post(notification);
 
-                if (presets.Count == 0)
-                {
-                    notifications?.Post(new SimpleNotification { Text = "No mosususu presets found to export." });
-                    return;
-                }
-
-                var transferObjects = presets.Select(p => new ModPresetTransferObject
-                {
-                    Name = p.Name,
-                    Description = p.Description,
-                    ModsJson = p.ModsJson
-                }).ToList();
-
-                string json = JsonConvert.SerializeObject(transferObjects, Formatting.Indented);
-
-                var exportStorage = storage.GetStorageForDirectory("exports");
-                const string filename = "osu_mod_presets.json";
-
-                using (var stream = exportStorage.CreateFileSafely(filename))
-                using (var writer = new StreamWriter(stream))
-                {
-                    writer.Write(json);
-                }
-
-                notifications?.Post(new SimpleNotification { Text = $"Exported {presets.Count} presets to {filename}!" });
-                exportStorage.PresentFileExternally(filename);
-            }
-            catch (Exception ex)
+            Task.Run(() =>
             {
-                notifications?.Post(new SimpleErrorNotification { Text = $"Export failed: {ex.Message}" });
-            }
+                try
+                {
+                    notification.Text = "Fetching presets...";
+                    var presets = realm.Run(r => r.All<ModPreset>()
+                        .Filter("Ruleset.ShortName == $0 && DeletePending == false", "mosususu")
+                        .Detach()
+                        .ToList());
+
+                    if (presets.Count == 0)
+                    {
+                        notification.Text = "No mosususu presets found to export.";
+                        notification.State = ProgressNotificationState.Cancelled;
+                        return;
+                    }
+
+                    notification.Text = $"Serializing {presets.Count} presets...";
+                    notification.Progress = 0.5f;
+
+                    var transferObjects = presets.Select(p => new ModPresetTransferObject
+                    {
+                        Name = p.Name,
+                        Description = p.Description,
+                        ModsJson = p.ModsJson
+                    }).ToList();
+
+                    string json = JsonConvert.SerializeObject(transferObjects, Formatting.Indented);
+
+                    var exportStorage = storage.GetStorageForDirectory("exports");
+                    const string filename = "osu_mod_presets.json";
+
+                    notification.Text = "Writing file...";
+                    notification.Progress = 0.9f;
+
+                    using (var stream = exportStorage.CreateFileSafely(filename))
+                    using (var writer = new StreamWriter(stream))
+                    {
+                        writer.Write(json);
+                    }
+
+                    notification.CompletionText = $"Exported {presets.Count} presets to {filename}!";
+                    notification.State = ProgressNotificationState.Completed;
+                    exportStorage.PresentFileExternally(filename);
+                }
+                catch (Exception ex)
+                {
+                    notification.State = ProgressNotificationState.Cancelled;
+                    Schedule(() => notifications?.Post(new SimpleErrorNotification { Text = $"Export failed: {ex.Message}" }));
+                }
+            });
         }
 
         private void exportCollections()
         {
-            try
+            var notification = new ProgressNotification
             {
-                // 1. Get all collections from Realm
-                var collections = realm.Run(r => r.All<BeatmapCollection>().Detach())
-                    .Select(c => new CollectionTransferObject
+                State = ProgressNotificationState.Active,
+                Text = "Exporting collections...",
+                CompletionText = "Collections exported!",
+            };
+            notifications.Post(notification);
+
+            bool includeScores = exportWithScores.Value;
+
+            Task.Run(() =>
+            {
+                try
+                {
+                    var exportStorage = storage.GetStorageForDirectory("exports");
+                    string filename = "collections.json";
+                    string json;
+                    int count = 0;
+
+                    if (includeScores)
                     {
-                    Name = c.Name,
-                    BeatmapMD5Hashes = c.BeatmapMD5Hashes.ToList()
-                    })
-                    .ToList();
+                        filename = "collections_with_scores.json";
+                        notification.Text = "Fetching collections and scores...";
+                        var collectionObjects = new List<CollectionWithScoresTransferObject>();
 
-                if (collections.Count == 0)
-                {
-                    notifications?.Post(new SimpleNotification { Text = "No collections found to export." });
-                    return;
+                        realm.Run(r =>
+                        {
+                            var collections = r.All<BeatmapCollection>().Detach().ToList();
+                            int total = collections.Count;
+                            int current = 0;
+
+                            foreach (var c in collections)
+                            {
+                                if (notification.State == ProgressNotificationState.Cancelled) return;
+
+                                var dto = new CollectionWithScoresTransferObject
+                                {
+                                    Name = c.Name,
+                                    BeatmapMD5Hashes = c.BeatmapMD5Hashes.ToList(),
+                                    Scores = new List<ScoreExportDto>()
+                                };
+
+                                foreach (var hash in c.BeatmapMD5Hashes)
+                                {
+                                    var scores = r.All<ScoreInfo>()
+                                        .Filter("BeatmapInfo.MD5Hash == $0 && DeletePending == false", hash)
+                                        .Detach()
+                                        .ToList();
+
+                                    foreach (var s in scores)
+                                    {
+                                        dto.Scores.Add(new ScoreExportDto
+                                        {
+                                            BeatmapHash = s.BeatmapInfo.MD5Hash,
+                                            RulesetShortName = s.Ruleset.ShortName,
+                                            TotalScore = s.TotalScore,
+                                            Accuracy = s.Accuracy,
+                                            MaxCombo = s.MaxCombo,
+                                            Rank = s.Rank.ToString(),
+                                            Date = s.Date,
+                                            Mods = s.Mods.Select(m => new APIMod(m)).ToList(),
+                                            Statistics = s.Statistics.ToDictionary(k => k.Key.ToString(), v => v.Value)
+                                        });
+                                    }
+                                }
+                                collectionObjects.Add(dto);
+                                current++;
+
+                                notification.Text = $"Processed {current}/{total} collections...";
+                                notification.Progress = (float)current / total;
+                            }
+                        });
+
+                        notification.Text = "Serializing data...";
+                        json = JsonConvert.SerializeObject(collectionObjects, Formatting.Indented);
+                        count = collectionObjects.Count;
+                    }
+                    else
+                    {
+                        notification.Text = "Fetching collections...";
+                        var collections = realm.Run(r => r.All<BeatmapCollection>().Detach())
+                            .Select(c => new CollectionTransferObject
+                            {
+                                Name = c.Name,
+                                BeatmapMD5Hashes = c.BeatmapMD5Hashes.ToList()
+                            })
+                            .ToList();
+
+                        if (collections.Count == 0)
+                        {
+                            notification.Text = "No collections found to export.";
+                            notification.State = ProgressNotificationState.Cancelled;
+                            return;
+                        }
+
+                        notification.Text = "Serializing data...";
+                        json = JsonConvert.SerializeObject(collections, Formatting.Indented);
+                        count = collections.Count;
+                    }
+
+                    notification.Text = "Writing file...";
+                    using (var stream = exportStorage.CreateFileSafely(filename))
+                    using (var writer = new StreamWriter(stream))
+                    {
+                        writer.Write(json);
+                    }
+
+                    notification.CompletionText = $"Exported {count} collections to {filename}!";
+                    notification.State = ProgressNotificationState.Completed;
+                    exportStorage.PresentFileExternally(filename);
                 }
-
-                // 2. Serialize
-                string json = JsonConvert.SerializeObject(collections, Formatting.Indented);
-
-                // 3. Write to file
-                var exportStorage = storage.GetStorageForDirectory("exports");
-                const string filename = "collections.json";
-
-                using (var stream = exportStorage.CreateFileSafely(filename))
-                using (var writer = new StreamWriter(stream))
+                catch (Exception ex)
                 {
-                    writer.Write(json);
+                    notification.State = ProgressNotificationState.Cancelled;
+                    Schedule(() => notifications?.Post(new SimpleErrorNotification { Text = $"Export failed: {ex.Message}" }));
                 }
+            });
+        }
 
-                notifications?.Post(new SimpleNotification { Text = $"Exported {collections.Count} collections to {filename}!" });
-                exportStorage.PresentFileExternally(filename);
-            }
-            catch (Exception ex)
-            {
-                notifications?.Post(new SimpleErrorNotification { Text = $"Export failed: {ex.Message}" });
-            }
+        // DTOs for Scores Export
+        public class CollectionWithScoresTransferObject
+        {
+            public string Name { get; set; } = string.Empty;
+            public List<string> BeatmapMD5Hashes { get; set; } = new List<string>();
+            public List<ScoreExportDto> Scores { get; set; } = new List<ScoreExportDto>();
+        }
+
+        public class ScoreExportDto
+        {
+            public string BeatmapHash { get; set; } = string.Empty;
+            public string RulesetShortName { get; set; } = string.Empty;
+            public long TotalScore { get; set; }
+            public double Accuracy { get; set; }
+            public int MaxCombo { get; set; }
+            public string Rank { get; set; } = string.Empty;
+            public DateTimeOffset Date { get; set; }
+            public List<APIMod> Mods { get; set; } = new List<APIMod>();
+            public Dictionary<string, int> Statistics { get; set; } = new Dictionary<string, int>();
         }
     }
-
-    // --------------------------------------------------------
-    // CUSTOM BUTTON & POPOVER FOR IMPORT
-    // --------------------------------------------------------
 
     public partial class ImportPresetButton : SettingsButton, IHasPopover
     {
@@ -262,7 +390,21 @@ namespace osu.Game.Rulesets.MOsu.UI
         public Popover GetPopover() => new ImportPresetPopover();
     }
 
-public partial class ImportPresetPopover : OsuPopover
+    public partial class ImportCollectionScoresButton : SettingsButton
+    {
+        [Resolved(CanBeNull = true)]
+        private IPerformFromScreenRunner? performer { get; set; }
+
+        [BackgroundDependencyLoader]
+        private void load()
+        {
+            Text = "Import collections + scores from file";
+            TooltipText = "Import a JSON file containing collections and scores";
+            Action = () => performer?.PerformFromScreen(screen => screen.Push(new CollectionWithScoresImportScreen()));
+        }
+    }
+
+    public partial class ImportPresetPopover : OsuPopover
     {
         [Resolved]
         private RealmAccess realm { get; set; } = null!;
@@ -298,7 +440,6 @@ public partial class ImportPresetPopover : OsuPopover
                         Height = 100,
                         RelativeSizeAxes = Axes.X,
                         SelectAllOnFocus = true,
-                        // FIX: Increase character limit (default is often too low)
                         LengthLimit = 1000000,
                     },
                     importButton = new RoundedButton
