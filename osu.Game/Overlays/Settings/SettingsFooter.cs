@@ -8,11 +8,11 @@ using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Cursor;
 using osu.Framework.Graphics.UserInterface;
-using osu.Framework.Logging;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics.UserInterface;
+using osu.Game.Localisation;
 using osu.Game.Rulesets;
 using osuTK;
 using osuTK.Graphics;
@@ -27,7 +27,7 @@ namespace osu.Game.Overlays.Settings
             RelativeSizeAxes = Axes.X;
             AutoSizeAxes = Axes.Y;
             Direction = FillDirection.Vertical;
-            Padding = new MarginPadding { Top = 20, Bottom = 30, Horizontal = SettingsPanel.CONTENT_MARGINS };
+            Padding = new MarginPadding { Top = 20, Bottom = 30, Left = SettingsPanel.CONTENT_PADDING.Left, Right = SettingsPanel.CONTENT_PADDING.Right };
 
             FillFlowContainer modes;
 
@@ -72,10 +72,9 @@ namespace osu.Game.Overlays.Settings
 
                     modes.Add(icon);
                 }
-                catch (Exception ex)
+                catch (Exception e)
                 {
-                    Logger.Error(ex, $"RIPAS {ruleset.Name}.");
-                    Logger.Log($"Could not create ruleset icon for {ruleset.Name}. Please check for an update from the developer.", level: LogLevel.Error);
+                    RulesetStore.LogRulesetFailure(ruleset, e);
                 }
             }
         }
@@ -118,7 +117,7 @@ namespace osu.Game.Overlays.Settings
 
             public MenuItem[] ContextMenuItems => new MenuItem[]
             {
-                new OsuMenuItem("Copy version", MenuItemType.Standard, () => game?.CopyToClipboard(version))
+                new OsuMenuItem(SettingsStrings.CopyVersion, MenuItemType.Standard, () => game?.CopyToClipboard(version))
             };
         }
     }

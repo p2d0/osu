@@ -3,11 +3,10 @@
 
 #nullable disable
 
-using osu.Framework.Graphics.UserInterface;
-using osu.Framework.Allocation;
-using osu.Framework.Logging;
-using osu.Game.Extensions;
 using System;
+using osu.Framework.Allocation;
+using osu.Framework.Graphics.UserInterface;
+using osu.Game.Extensions;
 
 namespace osu.Game.Rulesets
 {
@@ -32,10 +31,9 @@ namespace osu.Game.Rulesets
                 {
                     AddItem(ruleset);
                 }
-                catch (Exception ex)
+                catch (Exception e)
                 {
-                    Logger.Error(ex, $"RIPAS {ruleset.Name}.");
-                    Logger.Log($"Could not create ruleset icon for {ruleset.Name}. Please check for an update from the developer.", level: LogLevel.Error);
+                    RulesetStore.LogRulesetFailure(ruleset, e);
                 }
             }
         }
