@@ -3,7 +3,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
+using System.Text;
 using Newtonsoft.Json;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
@@ -48,18 +51,36 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
 
             var mods = selectedMods.Value.Where(m => m.Type != ModType.System).ToList();
 
-            var exportData = new List<PresetExportDto>
+            if (mods.Count == 0) return;
+
+            var sb = new StringBuilder();
+
+            foreach (var mod in mods.Where(m => m.Type == ModType.DifficultyIncrease))
+                sb.Append($"+{mod.Acronym} ");
+
+            foreach (var mod in mods.Where(m => m.Type != ModType.DifficultyIncrease))
+                sb.Append($"-{mod.Acronym} ");
+
+            string modsString = sb.ToString().Trim();
+
+            var preset = new PresetExportDto
             {
-                new PresetExportDto
-                {
-                    Name = "My Mods",
-                    RulesetShortName = currentRuleset.Value.ShortName,
-                    Mods = mods.Select(m => new APIMod(m)).ToList()
-                }
+                Name = "My Mods",
+                RulesetShortName = currentRuleset.Value.ShortName,
+                Mods = mods.Select(m => new APIMod(m)).ToList()
             };
 
-            string json = JsonConvert.SerializeObject(exportData, Formatting.None);
-            channelManager.PostMessage(json);
+            string json = JsonConvert.SerializeObject(new List<PresetExportDto> { preset }, Formatting.None);
+            string base64;
+            using (var ms = new MemoryStream())
+            {
+                using (var gz = new GZipStream(ms, CompressionLevel.Optimal))
+                using (var sw = new StreamWriter(gz))
+                    sw.Write(json);
+                base64 = Convert.ToBase64String(ms.ToArray());
+            }
+
+            channelManager.PostMessage($"is playing with <{currentRuleset.Value.Name}> {modsString} [\u200B](osu://preset/{base64})");
         }
 
         private class PresetExportDto

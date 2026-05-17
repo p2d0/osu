@@ -3,7 +3,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
+using System.Text;
 using Newtonsoft.Json;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
@@ -42,31 +45,71 @@ namespace osu.Game.Rulesets.MOsu.UI.Chat
                 if (selectedMods == null || currentRuleset == null)
                     return Array.Empty<MenuItem>();
 
-                string content = Message.Content;
-                if (string.IsNullOrWhiteSpace(content))
-                    return Array.Empty<MenuItem>();
-
-                content = content.Trim();
-                if (!content.StartsWith("[") || !content.EndsWith("]"))
-                    return Array.Empty<MenuItem>();
-
-                try
+                // Try extracting preset from invisible link in the message
+                var preset = extractPresetFromLinks(Message.Links);
+                if (preset != null)
                 {
-                    var presets = JsonConvert.DeserializeObject<List<PresetExportDto>>(content);
-                    if (presets != null && presets.Count > 0)
+                    return new MenuItem[]
                     {
-                        return new MenuItem[]
-                        {
-                            new OsuMenuItem("Apply Mod Preset", MenuItemType.Highlighted, () => applyPreset(presets.First()))
-                        };
-                    }
+                        new OsuMenuItem("Apply Mod Preset", MenuItemType.Highlighted, () => applyPreset(preset))
+                    };
                 }
-                catch
+
+                // Fallback: try parsing JSON from message content for backward compat
+                string content = Message.Content;
+                if (!string.IsNullOrWhiteSpace(content))
                 {
-                    // Ignore parsing failures
+                    content = content.Trim();
+                    try
+                    {
+                        var presets = JsonConvert.DeserializeObject<List<PresetExportDto>>(content);
+                        if (presets != null && presets.Count > 0)
+                        {
+                            return new MenuItem[]
+                            {
+                                new OsuMenuItem("Apply Mod Preset", MenuItemType.Highlighted, () => applyPreset(presets.First()))
+                            };
+                        }
+                    }
+                    catch
+                    {
+                    }
                 }
 
                 return Array.Empty<MenuItem>();
+            }
+        }
+
+        private PresetExportDto? extractPresetFromLinks(List<Link> links)
+        {
+            var presetLink = links.FirstOrDefault(l => l.Url.StartsWith("osu://preset/"));
+            if (presetLink == null) return null;
+
+            string base64 = presetLink.Url["osu://preset/".Length..];
+            try
+            {
+                byte[] data = Convert.FromBase64String(base64);
+                string json;
+
+                // Try gzip decompression first, fall back to plain text
+                try
+                {
+                    using var ms = new MemoryStream(data);
+                    using var gz = new GZipStream(ms, CompressionMode.Decompress);
+                    using var sr = new StreamReader(gz);
+                    json = sr.ReadToEnd();
+                }
+                catch
+                {
+                    json = Encoding.UTF8.GetString(data);
+                }
+
+                var presets = JsonConvert.DeserializeObject<List<PresetExportDto>>(json);
+                return presets?.FirstOrDefault();
+            }
+            catch
+            {
+                return null;
             }
         }
 
