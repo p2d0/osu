@@ -216,6 +216,7 @@ global using TransformToolboxGroup = osu.Game.Rulesets.Osu.Edit.TransformToolbox
 global using TrianglesPiece = osu.Game.Rulesets.Osu.Skinning.Default.TrianglesPiece;
 global using DrawableOsuHitObject = osu.Game.Rulesets.Osu.Objects.Drawables.DrawableOsuHitObject;
 global using OsuCursorContainer = osu.Game.Rulesets.Osu.UI.Cursor.OsuCursorContainer;
+global using OsuDifficultyHitObject = osu.Game.Rulesets.Osu.Difficulty.Preprocessing.OsuDifficultyHitObject;
 global using OsuResumeOverlay = osu.Game.Rulesets.Osu.UI.OsuResumeOverlay;
 global using OsuSelectionHandler = osu.Game.Rulesets.Osu.Edit.OsuSelectionHandler;
 global using OsuSkinComponents = osu.Game.Rulesets.Osu.OsuSkinComponents;
