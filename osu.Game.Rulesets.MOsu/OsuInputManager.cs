@@ -1,13 +1,13 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using System.ComponentModel;
 using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Events;
 using osu.Framework.Lists;
+using osu.Game.Database;
 using osu.Game.Input.Bindings;
 using osu.Game.Rulesets.MOsu.Objects.Drawables;
 using osu.Game.Rulesets.MOsu.UI;
@@ -71,6 +71,9 @@ namespace osu.Game.Rulesets.MOsu
         {
             private bool allowGameplayInputs = true;
 
+            [Resolved]
+            private RealmAccess realm { get; set; } = null!;
+
             /// <summary>
             /// Whether gameplay input buttons should be allowed.
             /// Defaults to <c>true</c>, generally used for mods like Relax which turn off main inputs.
@@ -95,23 +98,14 @@ namespace osu.Game.Rulesets.MOsu
 
             protected override void ReloadMappings(IQueryable<RealmKeyBinding> realmKeyBindings)
             {
-                base.ReloadMappings(realmKeyBindings);
+                var osuBindings = realm.Realm.All<RealmKeyBinding>()
+                    .Where(b => b.RulesetName == osu.Game.Rulesets.Osu.OsuRuleset.SHORT_NAME && b.Variant == 0);
+
+                base.ReloadMappings(osuBindings);
 
                 if (!AllowGameplayInputs)
                     KeyBindings = KeyBindings.Where(static b => b.GetAction<OsuAction>() == OsuAction.Smoke).ToList();
             }
         }
-    }
-
-    public enum OsuAction
-    {
-        [Description("Left button")]
-        LeftButton,
-
-        [Description("Right button")]
-        RightButton,
-
-        [Description("Smoke")]
-        Smoke,
     }
 }

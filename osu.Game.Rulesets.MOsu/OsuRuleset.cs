@@ -1,6 +1,8 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+global using OsuAction = osu.Game.Rulesets.Osu.OsuAction;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -53,9 +55,6 @@ using osu.Game.Rulesets.MOsu.UI.Toolbar;
 using osu.Game.Rulesets.MOsu.UI.LocalUser;
 using osu.Framework.Graphics.Shapes;
 using osuTK.Graphics;
-using osu.Game.Graphics.Sprites;
-using osu.Game.Rulesets.MOsu.Extensions;
-using osu.Game.Screens.Select;
 
 namespace osu.Game.Rulesets.MOsu
 {
@@ -75,14 +74,9 @@ namespace osu.Game.Rulesets.MOsu
 
         public override string RulesetAPIVersionSupported => CURRENT_RULESET_API_VERSION;
 
-        public override IEnumerable<KeyBinding> GetDefaultKeyBindings(int variant = 0) => new[]
-        {
-            new KeyBinding(InputKey.Z, OsuAction.LeftButton),
-            new KeyBinding(InputKey.X, OsuAction.RightButton),
-            new KeyBinding(InputKey.C, OsuAction.Smoke),
-            new KeyBinding(InputKey.MouseLeft, OsuAction.LeftButton),
-            new KeyBinding(InputKey.MouseRight, OsuAction.RightButton),
-        };
+        public override IEnumerable<KeyBinding> GetDefaultKeyBindings(int variant = 0) => new osu.Game.Rulesets.Osu.OsuRuleset().GetDefaultKeyBindings(variant);
+
+        public override IEnumerable<int> AvailableVariants => Array.Empty<int>();
 
         public override IEnumerable<Mod> ConvertFromLegacyMods(LegacyMods mods)
         {
