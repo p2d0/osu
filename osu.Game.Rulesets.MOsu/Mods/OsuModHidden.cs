@@ -12,8 +12,8 @@ using osu.Game.Beatmaps;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Drawables;
-using osu.Game.Rulesets.MOsu.Objects.Drawables;
-using osu.Game.Rulesets.MOsu.Objects;
+using osu.Game.Rulesets.Osu.Objects.Drawables;
+using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Rulesets.MOsu.Skinning;
 
 namespace osu.Game.Rulesets.MOsu.Mods

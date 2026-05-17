@@ -10,7 +10,7 @@ using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Legacy;
 using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Rulesets.MOsu.Mods;
-using osu.Game.Rulesets.MOsu.Objects;
+using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Rulesets.MOsu.Scoring;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Rulesets.Scoring.Legacy;

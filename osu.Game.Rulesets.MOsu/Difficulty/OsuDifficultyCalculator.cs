@@ -11,9 +11,9 @@ using osu.Game.Rulesets.Difficulty.Skills;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.MOsu.Difficulty.Preprocessing;
 using osu.Game.Rulesets.MOsu.Difficulty.Skills;
-using osu.Game.Rulesets.MOsu.Difficulty.Utils;
+using osu.Game.Rulesets.Osu.Difficulty.Utils;
 using osu.Game.Rulesets.MOsu.Mods;
-using osu.Game.Rulesets.MOsu.Objects;
+using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Rulesets.MOsu.Scoring;
 using osu.Game.Rulesets.Scoring;
 

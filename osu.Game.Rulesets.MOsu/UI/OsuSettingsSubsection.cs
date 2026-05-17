@@ -21,7 +21,7 @@ using osu.Game.Graphics;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Settings;
-using osu.Game.Rulesets.MOsu.Configuration;
+using osu.Game.Rulesets.Osu.Configuration;
 using osu.Game.Rulesets.UI;
 using osu.Game.Overlays.Notifications;
 using osu.Game.Rulesets.Mods;

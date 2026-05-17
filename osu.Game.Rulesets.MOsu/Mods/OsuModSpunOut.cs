@@ -9,7 +9,7 @@ using osu.Framework.Utils;
 using osu.Game.Graphics;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Objects.Drawables;
-using osu.Game.Rulesets.MOsu.Objects.Drawables;
+using osu.Game.Rulesets.Osu.Objects.Drawables;
 
 namespace osu.Game.Rulesets.MOsu.Mods
 {

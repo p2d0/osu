@@ -8,8 +8,8 @@ using osu.Framework.Localisation;
 using osu.Game.Graphics;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Objects.Drawables;
-using osu.Game.Rulesets.MOsu.Objects;
-using osu.Game.Rulesets.MOsu.Objects.Drawables;
+using osu.Game.Rulesets.Osu.Objects;
+using osu.Game.Rulesets.Osu.Objects.Drawables;
 using osuTK;
 
 namespace osu.Game.Rulesets.MOsu.Mods

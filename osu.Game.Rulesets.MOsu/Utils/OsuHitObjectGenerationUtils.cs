@@ -7,11 +7,11 @@ using System.Linq;
 using osu.Framework.Extensions.IEnumerableExtensions;
 using osu.Framework.Utils;
 using osu.Game.Beatmaps.ControlPoints;
-using osu.Game.Rulesets.MOsu.UI;
+using osu.Game.Rulesets.Osu.UI;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Rulesets.MOsu.Beatmaps;
-using osu.Game.Rulesets.MOsu.Objects;
+using osu.Game.Rulesets.Osu.Objects;
 using osuTK;
 
 namespace osu.Game.Rulesets.MOsu.Utils

@@ -9,7 +9,7 @@ using osu.Framework.Input.Events;
 using osu.Framework.Lists;
 using osu.Game.Database;
 using osu.Game.Input.Bindings;
-using osu.Game.Rulesets.MOsu.Objects.Drawables;
+using osu.Game.Rulesets.Osu.Objects.Drawables;
 using osu.Game.Rulesets.MOsu.UI;
 using osu.Game.Rulesets.UI;
 using osuTK;

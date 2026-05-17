@@ -3,7 +3,7 @@
 
 using System.Collections.Generic;
 using osu.Game.Rulesets.Judgements;
-using osu.Game.Rulesets.MOsu.Judgements;
+using osu.Game.Rulesets.Osu.Judgements;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Scoring;
 
