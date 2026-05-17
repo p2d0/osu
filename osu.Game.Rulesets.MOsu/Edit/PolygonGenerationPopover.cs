@@ -12,11 +12,11 @@ using osu.Game.Beatmaps.ControlPoints;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Graphics.UserInterfaceV2;
 using osu.Game.Rulesets.Edit;
+using osu.Game.Rulesets.MOsu.Objects;
+using osu.Game.Rulesets.MOsu.UI;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Legacy;
 using osu.Game.Rulesets.Objects.Types;
-using osu.Game.Rulesets.MOsu.Objects;
-using osu.Game.Rulesets.MOsu.UI;
 using osu.Game.Screens.Edit;
 using osu.Game.Screens.Edit.Compose.Components;
 using osuTK;
@@ -25,10 +25,10 @@ namespace osu.Game.Rulesets.MOsu.Edit
 {
     public partial class PolygonGenerationPopover : OsuPopover
     {
-        private SliderWithTextBoxInput<double> distanceSnapInput = null!;
-        private SliderWithTextBoxInput<int> offsetAngleInput = null!;
-        private SliderWithTextBoxInput<int> repeatCountInput = null!;
-        private SliderWithTextBoxInput<int> pointInput = null!;
+        private FormSliderBar<double> distanceSnapInput { get; set; } = null!;
+        private FormSliderBar<int> offsetAngleInput { get; set; } = null!;
+        private FormSliderBar<int> repeatCountInput { get; set; } = null!;
+        private FormSliderBar<int> pointInput { get; set; } = null!;
         private RoundedButton commitButton = null!;
 
         private readonly List<HitCircle> insertedCircles = new List<HitCircle>();
@@ -64,11 +64,12 @@ namespace osu.Game.Rulesets.MOsu.Edit
             {
                 Width = 220,
                 AutoSizeAxes = Axes.Y,
-                Spacing = new Vector2(20),
+                Spacing = new Vector2(5),
                 Children = new Drawable[]
                 {
-                    distanceSnapInput = new SliderWithTextBoxInput<double>("Distance snap:")
+                    distanceSnapInput = new FormSliderBar<double>
                     {
+                        Caption = "Distance snap",
                         Current = new BindableNumber<double>(1)
                         {
                             MinValue = 0.1,
@@ -76,37 +77,40 @@ namespace osu.Game.Rulesets.MOsu.Edit
                             Precision = 0.1,
                             Value = ((OsuHitObjectComposer)composer).DistanceSnapProvider.DistanceSpacingMultiplier.Value,
                         },
-                        Instantaneous = true
+                        TabbableContentContainer = this
                     },
-                    offsetAngleInput = new SliderWithTextBoxInput<int>("Offset angle:")
+                    offsetAngleInput = new FormSliderBar<int>
                     {
+                        Caption = "Offset angle",
                         Current = new BindableNumber<int>
                         {
                             MinValue = 0,
                             MaxValue = 180,
                             Precision = 1
                         },
-                        Instantaneous = true
+                        TabbableContentContainer = this
                     },
-                    repeatCountInput = new SliderWithTextBoxInput<int>("Repeats:")
+                    repeatCountInput = new FormSliderBar<int>
                     {
+                        Caption = "Repeats",
                         Current = new BindableNumber<int>(1)
                         {
                             MinValue = 1,
                             MaxValue = 10,
                             Precision = 1
                         },
-                        Instantaneous = true
+                        TabbableContentContainer = this
                     },
-                    pointInput = new SliderWithTextBoxInput<int>("Vertices:")
+                    pointInput = new FormSliderBar<int>
                     {
+                        Caption = "Vertices",
                         Current = new BindableNumber<int>(3)
                         {
                             MinValue = 3,
                             MaxValue = 32,
                             Precision = 1,
                         },
-                        Instantaneous = true
+                        TabbableContentContainer = this
                     },
                     commitButton = new RoundedButton
                     {
@@ -133,21 +137,6 @@ namespace osu.Game.Rulesets.MOsu.Edit
             tryCreatePolygon();
         }
 
-        /// <summary>
-        /// Introduces floating-point errors to post-multiplied beat length for legacy rulesets that depend on it.
-        /// You should definitely not use this unless you know exactly what you're doing.
-        /// </summary>
-        public static double GetPrecisionAdjustedBeatLength(IHasSliderVelocity hasSliderVelocity, TimingControlPoint timingControlPoint, string rulesetShortName)
-        {
-            double sliderVelocityAsBeatLength = -100 / hasSliderVelocity.SliderVelocityMultiplier;
-
-            // Note: In stable, the division occurs on floats, but with compiler optimisations turned on actually seems to occur on doubles via some .NET black magic (possibly inlining?).
-            double bpmMultiplier;
-
-            bpmMultiplier = sliderVelocityAsBeatLength < 0 ? Math.Clamp((float)-sliderVelocityAsBeatLength, 10, 1000) / 100.0 : 1;
-            return timingControlPoint.BeatLength * bpmMultiplier;
-        }
-
         private void tryCreatePolygon()
         {
             double startTime = beatSnapProvider.SnapTime(editorClock.CurrentTime);
@@ -155,7 +144,7 @@ namespace osu.Game.Rulesets.MOsu.Edit
             double timeSpacing = timingPoint.BeatLength / editorBeatmap.BeatDivisor;
             IHasSliderVelocity lastWithSliderVelocity = editorBeatmap.HitObjects.Where(ho => ho.GetEndTime() <= startTime).OfType<IHasSliderVelocity>().LastOrDefault() ?? new Slider();
             double velocity = OsuHitObject.BASE_SCORING_DISTANCE * editorBeatmap.Difficulty.SliderMultiplier
-                              / GetPrecisionAdjustedBeatLength(lastWithSliderVelocity, timingPoint, OsuRuleset.SHORT_NAME);
+                              / LegacyRulesetExtensions.GetPrecisionAdjustedBeatLength(lastWithSliderVelocity, timingPoint, OsuRuleset.SHORT_NAME);
             double length = distanceSnapInput.Current.Value * velocity * timeSpacing;
             float polygonRadius = (float)(length / (2 * Math.Sin(double.Pi / pointInput.Current.Value)));
 

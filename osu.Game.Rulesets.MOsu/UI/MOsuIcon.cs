@@ -55,7 +55,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                 // 2. We attach the Logic Manager as a child.
                 // It will run its lifecycle without cluttering the Icon code.
                 new MOsuSystemManager(ruleset),
-                new BeatmapModsSelectInjector(),
+                // new BeatmapModsSelectInjector(),
                 new ChatOverlayInjector()
             };
         }

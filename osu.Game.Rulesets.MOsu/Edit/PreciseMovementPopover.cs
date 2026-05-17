@@ -18,11 +18,11 @@ using osu.Game.Graphics.UserInterface;
 using osu.Game.Input.Bindings;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Types;
-using osu.Game.Rulesets.MOsu.Objects;
-using osu.Game.Rulesets.MOsu.UI;
 using osu.Game.Screens.Edit;
 using osu.Game.Utils;
 using osuTK;
+using osu.Game.Rulesets.MOsu.Objects;
+using osu.Game.Rulesets.MOsu.UI;
 
 namespace osu.Game.Rulesets.MOsu.Edit
 {
@@ -37,7 +37,7 @@ namespace osu.Game.Rulesets.MOsu.Edit
         private BindableNumber<float> xBindable = null!;
         private BindableNumber<float> yBindable = null!;
 
-        private SliderWithTextBoxInput<float> xInput = null!;
+        private FormSliderBar<float> xInput { get; set; } = null!;
         private OsuCheckbox relativeCheckbox = null!;
 
         public PreciseMovementPopover()
@@ -52,31 +52,31 @@ namespace osu.Game.Rulesets.MOsu.Edit
             {
                 Width = 220,
                 AutoSizeAxes = Axes.Y,
-                Spacing = new Vector2(20),
+                Spacing = new Vector2(5),
                 Children = new Drawable[]
                 {
-                    xInput = new SliderWithTextBoxInput<float>("X:")
+                    xInput = new FormSliderBar<float>
                     {
+                        Caption = "X",
                         Current = xBindable = new BindableNumber<float>
                         {
                             Precision = 1,
                         },
-                        Instantaneous = true,
-                        TabbableContentContainer = this,
+                        TabbableContentContainer = this
                     },
-                    new SliderWithTextBoxInput<float>("Y:")
+                    new FormSliderBar<float>
                     {
+                        Caption = "Y",
                         Current = yBindable = new BindableNumber<float>
                         {
                             Precision = 1,
                         },
-                        Instantaneous = true,
-                        TabbableContentContainer = this,
+                        TabbableContentContainer = this
                     },
                     relativeCheckbox = new OsuCheckbox(false)
                     {
                         RelativeSizeAxes = Axes.X,
-                        LabelText = "Relative movement",
+                        LabelText = "Relative movement"
                     }
                 }
             };

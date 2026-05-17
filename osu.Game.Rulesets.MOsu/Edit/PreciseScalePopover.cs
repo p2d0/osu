@@ -14,9 +14,9 @@ using osu.Game.Configuration;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Graphics.UserInterfaceV2;
 using osu.Game.Input.Bindings;
-using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.MOsu.Objects;
 using osu.Game.Rulesets.MOsu.UI;
+using osu.Game.Rulesets.Objects;
 using osu.Game.Screens.Edit;
 using osu.Game.Screens.Edit.Components.RadioButtons;
 using osu.Game.Screens.Edit.Compose.Components;
@@ -32,7 +32,7 @@ namespace osu.Game.Rulesets.MOsu.Edit
 
         private readonly Bindable<PreciseScaleInfo> scaleInfo = new Bindable<PreciseScaleInfo>(new PreciseScaleInfo(1, EditorOrigin.GridCentre, true, true));
 
-        private SliderWithTextBoxInput<float> scaleInput = null!;
+        private FormSliderBar<float> scaleInput { get; set; } = null!;
         private BindableNumber<float> scaleInputBindable = null!;
         private EditorRadioButtonCollection scaleOrigin = null!;
 
@@ -66,11 +66,12 @@ namespace osu.Game.Rulesets.MOsu.Edit
             {
                 Width = 220,
                 AutoSizeAxes = Axes.Y,
-                Spacing = new Vector2(20),
+                Spacing = new Vector2(5),
                 Children = new Drawable[]
                 {
-                    scaleInput = new SliderWithTextBoxInput<float>("Scale:")
+                    scaleInput = new FormSliderBar<float>
                     {
+                        Caption = "Scale",
                         Current = scaleInputBindable = new BindableNumber<float>
                         {
                             MinValue = 0.05f,
@@ -80,7 +81,7 @@ namespace osu.Game.Rulesets.MOsu.Edit
                             Default = 1,
                         },
                         KeyboardStep = 0.01f,
-                        Instantaneous = true
+                        TabbableContentContainer = this
                     },
                     scaleOrigin = new EditorRadioButtonCollection
                     {

@@ -27,7 +27,7 @@ using osu.Game.Overlays.Notifications;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Localisation;
 using osuTK;
-using osu.Game.Graphics.UserInterfaceV2;
+using osu.Game.Graphics.UserInterface;
 using osu.Game.Graphics.Sprites;
 using System.Linq.Expressions;
 using Realms;
@@ -52,6 +52,7 @@ using osu.Framework.Screens;
 using osu.Game.Localisation;
 using osu.Game.Screens;
 using osu.Game.Models;
+using osu.Game.Graphics.UserInterfaceV2;
 
 namespace osu.Game.Rulesets.MOsu.UI
 {

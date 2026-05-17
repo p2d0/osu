@@ -6,7 +6,9 @@ using Newtonsoft.Json;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Extensions;
+using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
+using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Cursor;
 using osu.Framework.Graphics.Shapes;
@@ -72,7 +74,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                 {
                     // 2. The Background stays OUTSIDE the shear correction.
                     // It inherits the parent's negative shear, giving it the "Wedge" shape.
-                    new WedgeBackground(),
+                    new LocalWedgeBackground(),
 
                     // 3. The Content gets sheared positively to appear straight to the user.
                     new Container
@@ -448,6 +450,41 @@ namespace osu.Game.Rulesets.MOsu.UI
                 this.FadeOut(200);
                 base.OnHoverLost(e);
             }
+        }
+    }
+
+    internal partial class LocalWedgeBackground : InputBlockingContainer
+    {
+        [BackgroundDependencyLoader]
+        private void load(OverlayColourProvider colourProvider)
+        {
+            RelativeSizeAxes = Axes.Both;
+
+            InternalChildren = new Drawable[]
+            {
+                new Box
+                {
+                    Blending = BlendingParameters.Additive,
+                    RelativeSizeAxes = Axes.Both,
+                    Width = 0.6f,
+                    Alpha = 0.5f,
+                    Colour = ColourInfo.GradientHorizontal(colourProvider.Background2, colourProvider.Background2.Opacity(0)),
+                },
+                new Box
+                {
+                    RelativeSizeAxes = Axes.Both,
+                    Width = 0.7f,
+                    Colour = colourProvider.Background5.Opacity(0.9f),
+                },
+                new Box
+                {
+                    Anchor = Anchor.TopRight,
+                    Origin = Anchor.TopRight,
+                    RelativeSizeAxes = Axes.Both,
+                    Width = 0.3f,
+                    Colour = ColourInfo.GradientHorizontal(colourProvider.Background5.Opacity(0.9f), colourProvider.Background5.Opacity(0.6f)),
+                },
+            };
         }
     }
 }

@@ -55,7 +55,7 @@ using osu.Framework.Graphics.Shapes;
 using osuTK.Graphics;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Rulesets.MOsu.Extensions;
-using osu.Game.Screens.SelectV2;
+using osu.Game.Screens.Select;
 
 namespace osu.Game.Rulesets.MOsu
 {
@@ -397,19 +397,24 @@ namespace osu.Game.Rulesets.MOsu
 
         public override IRulesetConfigManager CreateConfig(SettingsStore? settings) => new OsuRulesetConfigManager(settings, RulesetInfo);
 
-        protected override IEnumerable<HitResult> GetValidHitResults()
+        public override IEnumerable<HitResult> GetValidHitResults()
         {
             return new[]
             {
                 HitResult.Great,
                 HitResult.Ok,
                 HitResult.Meh,
+                HitResult.Miss,
 
                 HitResult.LargeTickHit,
+                HitResult.LargeTickMiss,
                 HitResult.SmallTickHit,
+                HitResult.SmallTickMiss,
                 HitResult.SliderTailHit,
                 HitResult.SmallBonus,
                 HitResult.LargeBonus,
+                HitResult.IgnoreHit,
+                HitResult.IgnoreMiss,
             };
         }
 

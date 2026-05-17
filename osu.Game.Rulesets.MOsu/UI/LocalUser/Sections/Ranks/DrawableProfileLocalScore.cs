@@ -27,7 +27,7 @@ using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.UI;
 using osu.Game.Scoring;
 using osu.Game.Screens;
-using osu.Game.Screens.SelectV2;
+using osu.Game.Screens.Select;
 using osu.Game.Utils;
 using osuTK;
 
@@ -375,7 +375,7 @@ namespace osu.Game.Rulesets.MOsu.UI.LocalUser.Sections.Ranks
                     }
                 }, validScreens: new[]
                 {
-                    typeof(SongSelect), typeof(Screens.SelectV2.SongSelect), typeof(IHandlePresentBeatmap)
+                    typeof(SongSelect), typeof(Screens.Select.SongSelect), typeof(IHandlePresentBeatmap)
                 });
             }
 
