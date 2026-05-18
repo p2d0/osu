@@ -123,16 +123,16 @@ namespace osu.Game.Rulesets.MOsu.UI
                     Current = config.GetBindable<PlayfieldBorderStyle>(OsuRulesetSetting.PlayfieldBorderStyle),
                 },
                 // --- Preset Export ---
-                new SettingsButton
+                new SettingsButtonV2
                 {
                     Text = "Export presets to file",
                     TooltipText = "Saves all mosususu presets to exports/osu_mod_presets.json",
                     Action = exportPresets
                 },
-
+                
                 // --- Preset Import (Popup) ---
                 new ImportPresetButton(),
-                new SettingsButton
+                new SettingsButtonV2
                 {
                     Text = "Import presets from file",
                     TooltipText = "Select a .json file from your computer",
@@ -153,13 +153,13 @@ namespace osu.Game.Rulesets.MOsu.UI
                     Current = exportWithScores,
                     TooltipText = "If checked, exporting collections will also include local scores for the beatmaps in those collections."
                 },
-                new SettingsButton
+                new SettingsButtonV2
                 {
                     Text = "Export collections to file",
                     TooltipText = "Saves all collections (and optionally scores) to exports/collections.json",
                     Action = exportCollections
                 },
-                new SettingsButton
+                new SettingsButtonV2
                 {
                     Text = "Import collections from file",
                     TooltipText = "Open file browser to select a collection .json (Standard format)",
@@ -378,7 +378,7 @@ namespace osu.Game.Rulesets.MOsu.UI
         }
     }
 
-    public partial class ImportPresetButton : SettingsButton, IHasPopover
+    public partial class ImportPresetButton : SettingsButtonV2, IHasPopover
     {
         [BackgroundDependencyLoader]
         private void load()
@@ -391,7 +391,7 @@ namespace osu.Game.Rulesets.MOsu.UI
         public Popover GetPopover() => new ImportPresetPopover();
     }
 
-    public partial class ImportCollectionScoresButton : SettingsButton
+    public partial class ImportCollectionScoresButton : SettingsButtonV2
     {
         [Resolved(CanBeNull = true)]
         private IPerformFromScreenRunner? performer { get; set; }
