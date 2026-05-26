@@ -41,6 +41,7 @@ namespace osu.Game.Rulesets.MOsu.UI.Toolbar
         public ToolbarLocalUserButton()
         {
             ButtonContent.AutoSizeAxes = Axes.X;
+            Alpha = 0;
         }
 
         [BackgroundDependencyLoader]
@@ -84,7 +85,12 @@ namespace osu.Game.Rulesets.MOsu.UI.Toolbar
             var localUser = api.LocalUser.GetBoundCopy();
             localUser.BindValueChanged(u => updateDisplay(u.NewValue), true);
 
-            ruleset.BindValueChanged(_ => updatePP(), true);
+            ruleset.BindValueChanged(r =>
+            {
+                bool isMOsu = r.NewValue.ShortName == "mosususu";
+                this.FadeTo(isMOsu ? 1 : 0, 200);
+                if (isMOsu) updatePP();
+            }, true);
 
             if (statisticsProvider != null)
                 statisticsProvider.StatisticsUpdated += onStatisticsUpdated;
