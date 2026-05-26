@@ -1,0 +1,66 @@
+name: MOsu Release
+on:
+  push:
+    tags:
+      - '*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create MOsu Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify tag is on mosu branch
+        id: verify
+        run: |
+          if git merge-base --is-ancestor "$GITHUB_REF" "origin/mosu"; then
+            echo "on_mosu=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "on_mosu=false" >> "$GITHUB_OUTPUT"
+            echo "Tag $GITHUB_REF_NAME is not on mosu branch, skipping."
+          fi
+
+      - name: Install .NET 8.0.x
+        if: steps.verify.outputs.on_mosu == 'true'
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Build MOsu
+        if: steps.verify.outputs.on_mosu == 'true'
+        run: dotnet build osu.Game.Rulesets.MOsu/osu.Game.Rulesets.MOsu.csproj -c Release
+
+      - name: Generate changelog
+        if: steps.verify.outputs.on_mosu == 'true'
+        run: |
+          prev_tag=$(git tag --merged mosu --sort=-creatordate | grep -v "^$GITHUB_REF_NAME$" | head -1)
+          {
+            echo "[How to install](https://rulesets.info/install/rulesets)"
+            echo
+            echo "## Changes"
+            if [ -n "$prev_tag" ]; then
+              git log "$prev_tag..$GITHUB_REF_NAME" --oneline --no-merges -- osu.Game.Rulesets.MOsu
+            else
+              git log --oneline --no-merges -- osu.Game.Rulesets.MOsu
+            fi
+          } > /tmp/changelog.md
+
+      - name: Create Release
+        if: steps.verify.outputs.on_mosu == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "MOsu ${{ github.ref_name }}"
+          tag_name: ${{ github.ref_name }}
+          body_path: /tmp/changelog.md
+          files: osu.Game.Rulesets.MOsu/bin/Release/net8.0/osu.Game.Rulesets.MOsu.dll
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
