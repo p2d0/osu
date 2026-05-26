@@ -212,6 +212,10 @@ namespace osu.Game.Rulesets.MOsu.UI
         private readonly BeatmapModPreset preset;
         private readonly BindableBool active = new BindableBool();
 
+        private string exportName = string.Empty;
+        private string exportRulesetShortName = string.Empty;
+        private List<Mod> exportMods = new List<Mod>();
+
         [Resolved]
         private Bindable<IReadOnlyList<Mod>> selectedMods { get; set; } = null!;
 
@@ -256,6 +260,10 @@ namespace osu.Game.Rulesets.MOsu.UI
             Masking = true;
 
             var mods = preset.Mods.ToList();
+
+            exportName = preset.Name;
+            exportRulesetShortName = preset.Ruleset?.ShortName ?? ruleset.Value.ShortName;
+            exportMods = mods;
 
             Children = new Drawable[]
             {
@@ -389,16 +397,13 @@ namespace osu.Game.Rulesets.MOsu.UI
             {
                 try
                 {
-                    // Create a list containing an anonymous object structure that matches
-                    // the PresetExportDto used in the Import function.
-                    // We export as a List so the existing Import logic (which expects a JSON array) works seamlessly.
                     var exportData = new List<object>
                     {
                         new
                         {
-                            Name = preset.Name,
-                            RulesetShortName = preset.Ruleset.ShortName,
-                            Mods = preset.Mods.Select(m => new APIMod(m)).ToList()
+                            Name = exportName,
+                            RulesetShortName = exportRulesetShortName,
+                            Mods = exportMods.Select(m => new APIMod(m)).ToList()
                         }
                     };
 
@@ -407,7 +412,7 @@ namespace osu.Game.Rulesets.MOsu.UI
 
                     notifications.Post(new SimpleNotification
                     {
-                        Text = $"Preset '{preset.Name}' copied to clipboard!"
+                        Text = $"Preset '{exportName}' copied to clipboard!"
                     });
                 }
                 catch (System.Exception ex)

@@ -43,8 +43,9 @@ namespace osu.Game.Rulesets.MOsu.Database
         /// <summary>
         /// Version history:
         /// 1    Initial MOsu Realm setup.
+        /// 2    2025-05-26  Added PresetImportState.
         /// </summary>
-        private const int schema_version = 1;
+        private const int schema_version = 2;
 
         /// <summary>
         /// Lock object which is held during <see cref="BlockAllOperations"/> sections, blocking realm retrieval during blocking periods.
@@ -579,7 +580,8 @@ namespace osu.Game.Rulesets.MOsu.Database
                 Schema = new[]
                 {
                     typeof(BeatmapModPreset),
-                    typeof(RulesetInfo)
+                    typeof(RulesetInfo),
+                    typeof(osu.Game.Rulesets.MOsu.Models.PresetImportState)
                     // typeof(OtherMOsuRealmModel),
                 },
                 FallbackPipePath = tempPathLocation,

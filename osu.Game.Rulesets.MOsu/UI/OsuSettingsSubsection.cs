@@ -187,27 +187,26 @@ namespace osu.Game.Rulesets.MOsu.UI
                 try
                 {
                     notification.Text = "Fetching presets...";
-                    var presets = realm.Run(r => r.All<ModPreset>()
+                    var transferObjects = realm.Run(r => r.All<ModPreset>()
                         .Filter("Ruleset.ShortName == $0 && DeletePending == false", "mosususu")
-                        .Detach()
+                        .ToList()
+                        .Select(p => new ModPresetTransferObject
+                        {
+                            Name = p.Name,
+                            Description = p.Description,
+                            ModsJson = p.ModsJson
+                        })
                         .ToList());
 
-                    if (presets.Count == 0)
+                    if (transferObjects.Count == 0)
                     {
                         notification.Text = "No mosususu presets found to export.";
                         notification.State = ProgressNotificationState.Cancelled;
                         return;
                     }
 
-                    notification.Text = $"Serializing {presets.Count} presets...";
+                    notification.Text = $"Serializing {transferObjects.Count} presets...";
                     notification.Progress = 0.5f;
-
-                    var transferObjects = presets.Select(p => new ModPresetTransferObject
-                    {
-                        Name = p.Name,
-                        Description = p.Description,
-                        ModsJson = p.ModsJson
-                    }).ToList();
 
                     string json = JsonConvert.SerializeObject(transferObjects, Formatting.Indented);
 
@@ -223,7 +222,7 @@ namespace osu.Game.Rulesets.MOsu.UI
                         writer.Write(json);
                     }
 
-                    notification.CompletionText = $"Exported {presets.Count} presets to {filename}!";
+                    notification.CompletionText = $"Exported {transferObjects.Count} presets to {filename}!";
                     notification.State = ProgressNotificationState.Completed;
                     exportStorage.PresentFileExternally(filename);
                 }
