@@ -1,0 +1,10 @@
+name: MOsu Test
+on:
+  push:
+    branches: [mosu]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "hello from push"
