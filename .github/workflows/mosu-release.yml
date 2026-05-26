@@ -3,6 +3,12 @@ on:
   push:
     tags:
       - '*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag name to release (e.g. 1.0.10)'
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -20,11 +26,12 @@ jobs:
       - name: Verify tag is on mosu branch
         id: verify
         run: |
-          if git merge-base --is-ancestor "$GITHUB_REF" "origin/mosu"; then
+          tag_ref="${GITHUB_REF:-refs/tags/${{ github.event.inputs.tag }}}"
+          if git merge-base --is-ancestor "$tag_ref" "origin/mosu"; then
             echo "on_mosu=true" >> "$GITHUB_OUTPUT"
           else
             echo "on_mosu=false" >> "$GITHUB_OUTPUT"
-            echo "Tag $GITHUB_REF_NAME is not on mosu branch, skipping."
+            echo "Tag ${tag_ref##refs/tags/} is not on mosu branch, skipping."
           fi
 
       - name: Install .NET 8.0.x
@@ -40,13 +47,14 @@ jobs:
       - name: Generate changelog
         if: steps.verify.outputs.on_mosu == 'true'
         run: |
-          prev_tag=$(git tag --merged mosu --sort=-creatordate | grep -v "^$GITHUB_REF_NAME$" | head -1)
+          tag_name="${GITHUB_REF_NAME:-${{ github.event.inputs.tag }}}"
+          prev_tag=$(git tag --merged mosu --sort=-creatordate | grep -v "^$tag_name$" | head -1)
           {
             echo "[How to install](https://rulesets.info/install/rulesets)"
             echo
             echo "## Changes"
             if [ -n "$prev_tag" ]; then
-              git log "$prev_tag..$GITHUB_REF_NAME" --oneline --no-merges -- osu.Game.Rulesets.MOsu
+              git log "$prev_tag..$tag_name" --oneline --no-merges -- osu.Game.Rulesets.MOsu
             else
               git log --oneline --no-merges -- osu.Game.Rulesets.MOsu
             fi
@@ -56,8 +64,8 @@ jobs:
         if: steps.verify.outputs.on_mosu == 'true'
         uses: softprops/action-gh-release@v2
         with:
-          name: "MOsu ${{ github.ref_name }}"
-          tag_name: ${{ github.ref_name }}
+          name: "MOsu ${{ github.ref_name || github.event.inputs.tag }}"
+          tag_name: ${{ github.ref_name || github.event.inputs.tag }}
           body_path: /tmp/changelog.md
           files: osu.Game.Rulesets.MOsu/bin/Release/net8.0/osu.Game.Rulesets.MOsu.dll
           draft: false
