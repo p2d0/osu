@@ -20,7 +20,7 @@ jobs:
       - name: Verify tag is on mosu branch
         id: verify
         run: |
-          if git branch --contains "$GITHUB_REF" --list mosu --format='%(refname:short)' | grep -q mosu; then
+          if git merge-base --is-ancestor "$GITHUB_REF" "origin/mosu"; then
             echo "on_mosu=true" >> "$GITHUB_OUTPUT"
           else
             echo "on_mosu=false" >> "$GITHUB_OUTPUT"
