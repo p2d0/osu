@@ -8,6 +8,7 @@ on:
       tag:
         description: 'Tag name to release (e.g. 1.0.10)'
         required: true
+        type: string
 
 permissions:
   contents: write
@@ -30,7 +31,7 @@ jobs:
             echo "on_mosu=true" >> "$GITHUB_OUTPUT"
           else
             echo "on_mosu=false" >> "$GITHUB_OUTPUT"
-            echo "Tag is not on mosu branch, skipping."
+            echo "Tag ${tag_ref##refs/tags/} is not on mosu branch, skipping."
           fi
 
       - name: Install .NET 8.0.x
